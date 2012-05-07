@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
@@ -162,13 +163,15 @@ public class OAIRiver extends AbstractRiverComponent implements River {
         closed = true;
     }
 
-    private ListRecordsRequest createOAIRequest() {
-        return new ListRecordsRequest() {
+    private class RiverListRecordsRequest extends ListRecordsRequest {
 
             Date from;
             Date until;
             ResumptionToken token;
 
+         RiverListRecordsRequest(URI uri) {
+             super(uri);
+         }
             @Override
             public void setFrom(Date from) {
                 this.from = from;
@@ -220,7 +223,6 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                 // only used in server context
                 return null;
             }
-        };
     }
 
     private class Harvester implements Runnable {
@@ -249,7 +251,7 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                     return;
                 }
                 boolean shouldHarvest = false;
-                final ListRecordsRequest request = createOAIRequest();
+                final ListRecordsRequest request = new RiverListRecordsRequest(oaiClient.getURI());
                 request.setFrom(DateUtil.parseDateISO(oaiFrom));
                 request.setUntil(DateUtil.parseDateISO(oaiUntil));
                 try {
@@ -382,17 +384,20 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                     try {
                         StylesheetTransformer transformer = new StylesheetTransformer("xsl");
                         oaiClient.setStylesheetTransformer(transformer);
-                        OAIOperation op = oaiClient.listRecords(request, response);
-                        oaiClient.waitFor(op);
-                        if (op.getStatusCodes().isEmpty()) {
+                        oaiClient.prepareListRecords(request, response);
+                        OAIOperation op = oaiClient.execute(oaiTimeout.getMillis(), TimeUnit.MILLISECONDS);
+                        if (op.getResult(oaiClient.getURI()) == null) {
                             logger.error("no response, failure");
                             failure = true;
                         } else {
-                            logger.info("OAI response status codes " + op.getStatusCodes());
-                        }
-                        if (!op.getExceptions().isEmpty()) {
-                            logger.error(op.getExceptions().toString());
-                            failure = true;
+                            if (op.getResult(oaiClient.getURI()).getStatusCode() != 200) {
+                                logger.error("HTTP status = " + op.getResult(oaiClient.getURI()).getStatusCode());
+                                failure = true;
+                            }
+                            if (op.getResult(oaiClient.getURI()).getThrowable() != null) {
+                                logger.error(op.getResult(oaiClient.getURI()).getThrowable().getMessage());
+                                failure = true;
+                            }
                         }
                     } catch (IOException ex) {
                         logger.error(ex.getMessage(), ex);

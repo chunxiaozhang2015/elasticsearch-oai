@@ -6,7 +6,7 @@
     <groupId>org.elasticsearch</groupId>
     <artifactId>elasticsearch-river-oai</artifactId>
     <name>elasticsearch-river-oai</name>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
     <description>OAI-PMH River for ElasticSearch</description>
     <inceptionYear>2012</inceptionYear>
@@ -30,10 +30,15 @@
     </parent>
 
     <properties>
-        <elasticsearch.version>0.19.2</elasticsearch.version>
+        <elasticsearch.version>0.19.3</elasticsearch.version>
     </properties>
 
     <repositories>
+        <repository>
+            <id>xbib-repo</id>
+            <name>xbib Maven Repository</name>
+            <url>http://github.com/xbib/maven-repo/tree/master/releases</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -48,6 +53,20 @@
             <groupId>org.xbib</groupId>
             <artifactId>xbib-oai</artifactId>
             <version>0.2</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.6.4</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.6.4</version>
             <scope>compile</scope>
         </dependency>
 
