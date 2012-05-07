@@ -23,6 +23,7 @@ import java.net.URI;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
@@ -90,7 +91,7 @@ public class OAIRiver extends AbstractRiverComponent implements River {
         this.riverIndexName = riverIndexName;
         this.client = client;
         if (settings.settings().containsKey("oai")) {
-            Map<String, Object> oaiSettings = (Map<String, Object>) settings.settings().get("oai");            
+            Map<String, Object> oaiSettings = (Map<String, Object>) settings.settings().get("oai");
             oaiPoll = XContentMapValues.nodeTimeValue(oaiSettings.get("poll"), TimeValue.timeValueMinutes(60));
             oaiUrl = XContentMapValues.nodeStringValue(oaiSettings.get("url"), "http://localhost");
             oaiSet = XContentMapValues.nodeStringValue(oaiSettings.get("set"), null);
@@ -165,64 +166,65 @@ public class OAIRiver extends AbstractRiverComponent implements River {
 
     private class RiverListRecordsRequest extends ListRecordsRequest {
 
-            Date from;
-            Date until;
-            ResumptionToken token;
+        Date from;
+        Date until;
+        ResumptionToken token;
 
-         RiverListRecordsRequest(URI uri) {
-             super(uri);
-         }
-            @Override
-            public void setFrom(Date from) {
-                this.from = from;
-            }
+        RiverListRecordsRequest(URI uri) {
+            super(uri);
+        }
 
-            @Override
-            public Date getFrom() {
-                return from;
-            }
+        @Override
+        public void setFrom(Date from) {
+            this.from = from;
+        }
 
-            @Override
-            public void setUntil(Date until) {
-                this.until = until;
-            }
+        @Override
+        public Date getFrom() {
+            return from;
+        }
 
-            @Override
-            public Date getUntil() {
-                return until;
-            }
+        @Override
+        public void setUntil(Date until) {
+            this.until = until;
+        }
 
-            @Override
-            public String getSet() {
-                return oaiSet;
-            }
+        @Override
+        public Date getUntil() {
+            return until;
+        }
 
-            @Override
-            public String getMetadataPrefix() {
-                return oaiMetadataPrefix;
-            }
+        @Override
+        public String getSet() {
+            return oaiSet;
+        }
 
-            @Override
-            public void setResumptionToken(ResumptionToken token) {
-                this.token = token;
-            }
+        @Override
+        public String getMetadataPrefix() {
+            return oaiMetadataPrefix;
+        }
 
-            @Override
-            public ResumptionToken getResumptionToken() {
-                return token;
-            }
+        @Override
+        public void setResumptionToken(ResumptionToken token) {
+            this.token = token;
+        }
 
-            @Override
-            public String getPath() {
-                // only used in server context
-                return null;
-            }
+        @Override
+        public ResumptionToken getResumptionToken() {
+            return token;
+        }
 
-            @Override
-            public Map<String, String[]> getParameterMap() {
-                // only used in server context
-                return null;
-            }
+        @Override
+        public String getPath() {
+            // only used in server context
+            return null;
+        }
+
+        @Override
+        public Map<String, String[]> getParameterMap() {
+            // only used in server context
+            return null;
+        }
     }
 
     private class Harvester implements Runnable {
@@ -262,9 +264,13 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                     } else {
                         Map<String, Object> oaiState = (Map<String, Object>) get.sourceAsMap().get("oai");
                         if (oaiState != null) {
-                            // resume
+                            Object lastHttpStatus = oaiState.get("last_http_status");
+                            int lastHttpStatusCode = -1;
+                            if (lastHttpStatus instanceof Integer) {
+                                lastHttpStatusCode = (Integer) lastHttpStatus;
+                            }
                             Object resumptionToken = oaiState.get("resumptionToken");
-                            if (resumptionToken != null) {
+                            if (resumptionToken != null && lastHttpStatusCode == 200) {
                                 ResumptionToken token = ResumptionToken.newToken(resumptionToken.toString());
                                 request.setResumptionToken(token);
                                 shouldHarvest = true;
@@ -275,12 +281,15 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                                 if (lastFrom != null && lastUntil != null) {
                                     Date d1 = DateUtil.parseDateISO(lastFrom.toString());
                                     Date d2 = DateUtil.parseDateISO(lastUntil.toString());
-                                    long delta = d2.getTime() - d1.getTime();
-                                    d1.setTime(d1.getTime() + delta);
-                                    d2.setTime(d2.getTime() + delta);
+                                    long delta1 = d2.getTime() - d1.getTime();
+                                    long delta2 = delta1;
                                     // don't harvest into the future (now +/- 15 seconds)
-                                    if (d2.getTime() < new Date().getTime() - 15000L) {
+                                    if (d2.getTime() + delta2 < new Date().getTime() - 15000L) {
+                                        d1.setTime(d1.getTime() + delta1);
+                                        d2.setTime(d2.getTime() + delta2);
+                                        oaiFrom = DateUtil.formatDateISO(d1);
                                         request.setFrom(d1);
+                                        oaiUntil = DateUtil.formatDateISO(d2);
                                         request.setUntil(d2);
                                         shouldHarvest = true;
                                     }
@@ -299,17 +308,7 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                     }
                 }
                 if (!shouldHarvest) {
-                    if (oaiPoll.millis() > 0L) {
-                        logger.info("waiting {} for next run of URL [{}] set [{}] metadataPrefix [{}]",
-                                oaiPoll, oaiUrl, oaiSet, oaiMetadataPrefix);
-                        try {
-                            Thread.sleep(oaiPoll.millis());
-                        } catch (InterruptedException e1) {
-                            if (closed) {
-                                return;
-                            }
-                        }
-                    }
+                    delay();
                     continue;
                 }
                 logger.info("OAI harvest: URL [{}] set [{}] metadataPrefix [{}] from [{}] until [{}] resumptionToken [{}]",
@@ -381,31 +380,41 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                         }
                     };
                     oaiClient.setMetadataReader(metadataReader);
+                    int status = -1;
                     try {
                         StylesheetTransformer transformer = new StylesheetTransformer("xsl");
                         oaiClient.setStylesheetTransformer(transformer);
                         oaiClient.prepareListRecords(request, response);
                         OAIOperation op = oaiClient.execute(oaiTimeout.getMillis(), TimeUnit.MILLISECONDS);
+                        status = op.getResult(oaiClient.getURI()).getStatusCode();
                         if (op.getResult(oaiClient.getURI()) == null) {
                             logger.error("no response, failure");
                             failure = true;
+                            closed = true;
                         } else {
-                            if (op.getResult(oaiClient.getURI()).getStatusCode() != 200) {
-                                logger.error("HTTP status = " + op.getResult(oaiClient.getURI()).getStatusCode());
+                            if (status != 200) {
+                                // transport/server errors
+                                logger.error("HTTP status = " + status);
                                 failure = true;
+                                closed = true;
                             }
                             if (op.getResult(oaiClient.getURI()).getThrowable() != null) {
                                 logger.error(op.getResult(oaiClient.getURI()).getThrowable().getMessage());
                                 failure = true;
+                                closed = true;
                             }
                         }
                     } catch (IOException ex) {
+                        // conection errors
                         logger.error(ex.getMessage(), ex);
                         failure = true;
+                        closed = true;
                     }
+                    // OAI errors
                     if (response.getError() != null) {
-                        logger.error("OAI response error " + response.getError());
+                        logger.error("OAI error " + response.getError());
                         failure = true;
+                        closed = true;
                     }
                     // save state
                     try {
@@ -421,29 +430,30 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                         if (request.getUntil() != null) {
                             builder.field("last_until", DateUtil.formatDateISO(request.getUntil()));
                         }
-                        builder.endObject().endObject();                        
-                        client.prepareBulk().add(indexRequest(riverIndexName).type(riverName.name()).id("_last").source(builder)).execute().actionGet();                        
-                    } catch (Exception ex) {
+                        builder.field("last_error", response.getError());
+                        builder.field("last_http_status", status);
+                        builder.endObject().endObject();
+                        client.prepareBulk().add(indexRequest(riverIndexName).type(riverName.name()).id("_last").source(builder)).execute().actionGet();
+                    } catch (IOException | ElasticSearchException ex) {
                         logger.error(ex.getMessage(), ex);
                         failure = true;
                     }
                 } while (request.getResumptionToken() != null && !failure && !closed);
-                // close if failure
-                if (failure) {
-                    closed = true;
-                } else {
-                    if (oaiPoll.millis() > 0L) {
-                        logger.info("waiting {} for next run of URL [{}] set [{}] metadataPrefix [{}]",
-                                oaiPoll, oaiUrl, oaiSet, oaiMetadataPrefix);
-                        try {
-                            Thread.sleep(oaiPoll.millis());
-                        } catch (InterruptedException e1) {
-                            if (closed) {
-                                return;
-                            }
-                        }
-                    }
+                if (!closed) {
+                    delay();
                 }
+            }
+        }
+    }
+
+    private void delay() {
+        if (oaiPoll.millis() > 0L) {
+            logger.info("waiting {} for next run of URL [{}] set [{}] metadataPrefix [{}]",
+                    oaiPoll, oaiUrl, oaiSet, oaiMetadataPrefix);
+            try {
+                Thread.sleep(oaiPoll.millis());
+            } catch (InterruptedException e1) {
+                
             }
         }
     }
