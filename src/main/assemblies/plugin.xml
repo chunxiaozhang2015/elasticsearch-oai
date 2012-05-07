@@ -14,7 +14,6 @@
             <includes>
                 <include>org.xbib:xbib-core</include>
                 <include>org.xbib:xbib-oai</include>
-                <include>org.xbib:xbib-cache</include>
                 <include>xerces:xercesImpl</include>
                 <include>xalan:xalan</include>
                 <include>xalan:serializer</include>
