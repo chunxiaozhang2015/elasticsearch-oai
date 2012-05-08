@@ -42,6 +42,7 @@ import org.elasticsearch.river.RiverIndexName;
 import org.elasticsearch.river.RiverName;
 import org.elasticsearch.river.RiverSettings;
 import org.xbib.io.EmptyWriter;
+import org.xbib.io.http.netty.HttpResult;
 import org.xbib.io.util.DateUtil;
 import org.xbib.oai.ListRecordsRequest;
 import org.xbib.oai.ListRecordsResponse;
@@ -386,20 +387,21 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                         oaiClient.setStylesheetTransformer(transformer);
                         oaiClient.prepareListRecords(request, response);
                         OAIOperation op = oaiClient.execute(oaiTimeout.getMillis(), TimeUnit.MILLISECONDS);
-                        status = op.getResult(oaiClient.getURI()).getStatusCode();
-                        if (op.getResult(oaiClient.getURI()) == null) {
+                        HttpResult result = op.getResult(oaiClient.getURI());
+                        if (result == null) {
                             logger.error("no response, failure");
                             failure = true;
                             closed = true;
                         } else {
+                            status = result.getStatusCode();
                             if (status != 200) {
                                 // transport/server errors
                                 logger.error("HTTP status = " + status);
                                 failure = true;
                                 closed = true;
                             }
-                            if (op.getResult(oaiClient.getURI()).getThrowable() != null) {
-                                logger.error(op.getResult(oaiClient.getURI()).getThrowable().getMessage());
+                            if (result.getThrowable() != null) {
+                                logger.error(result.getThrowable().getMessage());
                                 failure = true;
                                 closed = true;
                             }
