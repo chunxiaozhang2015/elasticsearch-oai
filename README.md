@@ -43,7 +43,7 @@ Documentation
 
 The Maven project site is [here](http://jprante.github.com/elasticsearch-river-oai)
 
-The Javadoc API can be found [here](http://jprante.github.com/elasticsearch-river-oai/apidoc/index.html)
+The Javadoc API can be found [here](http://jprante.github.com/elasticsearch-river-oai/apidocs/index.html)
 
 Configuration
 -------------
