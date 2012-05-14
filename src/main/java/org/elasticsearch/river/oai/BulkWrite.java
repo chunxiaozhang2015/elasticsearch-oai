@@ -43,7 +43,7 @@ public class BulkWrite extends AbstractWrite {
     private static final int MAX_TOTAL_TIMEOUTS = 10;
     private static final AtomicInteger onGoingBulks = new AtomicInteger(0);
     private static final AtomicInteger counter = new AtomicInteger(0);
-    private BulkRequestBuilder currentBulk;
+    private ThreadLocal<BulkRequestBuilder> currentBulk = new ThreadLocal();
 
     public BulkWrite(ESLogger logger, String index, String type) {
         super(index, type, ':');
@@ -68,30 +68,30 @@ public class BulkWrite extends AbstractWrite {
     
     @Override
     public void write(Client client, Resource resource) throws IOException {       
-        if (currentBulk == null) {
-            currentBulk = client.prepareBulk();
+        if (currentBulk.get() == null) {
+            currentBulk.set(client.prepareBulk());
         }
         build(resource);
         if (resource.isDeleted()) {
-            currentBulk.add(Requests.deleteRequest(index).type(type).id(createId(resource)));
+            currentBulk.get().add(Requests.deleteRequest(index).type(type).id(createId(resource)));
         } else {
-            currentBulk.add(Requests.indexRequest(index).type(type).id(createId(resource)).create(false).source(getBuilder()));
+            currentBulk.get().add(Requests.indexRequest(index).type(type).id(createId(resource)).create(false).source(getBuilder()));
         }
-        if (currentBulk.numberOfActions() >= bulkSize) {
+        if (currentBulk.get().numberOfActions() >= bulkSize) {
             processBulk(client);
         }
     }
     
     @Override
     public void flush(Client client)  throws IOException {
-        if (currentBulk == null) {
+        if (currentBulk.get() == null) {
             return;
         }
         if (totalTimeouts > MAX_TOTAL_TIMEOUTS) {
             // waiting some minutes is much too long, do not wait any longer            
             throw new IOException("total flush() timeouts exceeded limit of + " + MAX_TOTAL_TIMEOUTS + ", aborting");
         }
-        if (currentBulk.numberOfActions() > 0) {
+        if (currentBulk.get().numberOfActions() > 0) {
             processBulk(client);
         }
         // wait for all outstanding bulk requests
@@ -121,10 +121,10 @@ public class BulkWrite extends AbstractWrite {
             }
         }
         int currentOnGoingBulks = onGoingBulks.incrementAndGet();
-        final int numberOfActions = currentBulk.numberOfActions();
+        final int numberOfActions = currentBulk.get().numberOfActions();
         logger.info("submitting new bulk index request ({} docs, {} requests currently active)", new Object[]{numberOfActions, currentOnGoingBulks});
         try {
-            currentBulk.execute(new ActionListener<BulkResponse>() {
+            currentBulk.get().execute(new ActionListener<BulkResponse>() {
 
                 @Override
                 public void onResponse(BulkResponse bulkResponse) {
@@ -148,7 +148,7 @@ public class BulkWrite extends AbstractWrite {
         } catch (Exception e) {
             logger.error("unhandled exception, failed to execute bulk request", e);
         } finally {
-            currentBulk = client.prepareBulk();
+            currentBulk.set(client.prepareBulk());
         }
     }
 }
