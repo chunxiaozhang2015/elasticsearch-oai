@@ -37,6 +37,14 @@ In order to install the plugin, simply run: `bin/plugin -install jprante/elastic
     | 1.0.0          | 0.19.2           |
     -------------------------------------
 
+
+Documentation
+-------------
+
+The Maven project site is [here](http://jprante.github.com/elasticsearch-river-oai)
+
+The Javadoc API can be found [here](http://jprante.github.com/elasticsearch-river-oai/apidoc/index.html)
+
 Configuration
 -------------
 
