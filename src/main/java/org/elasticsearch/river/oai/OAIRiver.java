@@ -95,8 +95,8 @@ public class OAIRiver extends AbstractRiverComponent implements River {
             Map<String, Object> oaiSettings = (Map<String, Object>) settings.settings().get("oai");
             oaiPoll = XContentMapValues.nodeTimeValue(oaiSettings.get("poll"), TimeValue.timeValueMinutes(60));
             oaiUrl = XContentMapValues.nodeStringValue(oaiSettings.get("url"), "http://localhost");
+            oaiMetadataPrefix = XContentMapValues.nodeStringValue(oaiSettings.get("metadataPrefix"), "oai_dc");
             oaiSet = XContentMapValues.nodeStringValue(oaiSettings.get("set"), null);
-            oaiMetadataPrefix = XContentMapValues.nodeStringValue(oaiSettings.get("metadataPrefix"), null);
             oaiFrom = XContentMapValues.nodeStringValue(oaiSettings.get("from"), null);
             oaiUntil = XContentMapValues.nodeStringValue(oaiSettings.get("until"), null);
             oaiProxyHost = XContentMapValues.nodeStringValue(oaiSettings.get("proxyhost"), null);
@@ -115,8 +115,8 @@ public class OAIRiver extends AbstractRiverComponent implements River {
         }
         if (settings.settings().containsKey("index")) {
             Map<String, Object> indexSettings = (Map<String, Object>) settings.settings().get("index");
-            indexName = XContentMapValues.nodeStringValue(indexSettings.get("index"), "oai");
-            typeName = XContentMapValues.nodeStringValue(indexSettings.get("type"), "default");
+            indexName = XContentMapValues.nodeStringValue(indexSettings.get("index"), URI.create(oaiUrl).getHost());
+            typeName = XContentMapValues.nodeStringValue(indexSettings.get("type"), oaiMetadataPrefix);
             bulkSize = XContentMapValues.nodeIntegerValue(indexSettings.get("bulk_size"), 100);
             maxBulkRequests = XContentMapValues.nodeIntegerValue(indexSettings.get("max_bulk_requests"), 30);
             if (indexSettings.containsKey("bulk_timeout")) {
@@ -261,45 +261,51 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                     client.admin().indices().prepareRefresh(riverIndexName).execute().actionGet();
                     GetResponse get = client.prepareGet(riverIndexName, riverName().name(), "_last").execute().actionGet();
                     if (!get.exists()) {
+                        // first invocation
                         shouldHarvest = true;
                     } else {
                         Map<String, Object> oaiState = (Map<String, Object>) get.sourceAsMap().get("oai");
                         if (oaiState != null) {
                             Object lastHttpStatus = oaiState.get("last_http_status");
-                            int lastHttpStatusCode = -1;
+                            int lastHttpStatusCode;
                             if (lastHttpStatus instanceof Integer) {
                                 lastHttpStatusCode = (Integer) lastHttpStatus;
-                            }
-                            Object resumptionToken = oaiState.get("resumptionToken");
-                            if (resumptionToken != null && lastHttpStatusCode == 200) {
-                                ResumptionToken token = ResumptionToken.newToken(resumptionToken.toString());
-                                request.setResumptionToken(token);
-                                shouldHarvest = true;
-                            } else {
-                                // advance time period
-                                Object lastFrom = oaiState.get("last_from");
-                                Object lastUntil = oaiState.get("last_until");
-                                if (lastFrom != null && lastUntil != null) {
-                                    Date d1 = DateUtil.parseDateISO(lastFrom.toString());
-                                    Date d2 = DateUtil.parseDateISO(lastUntil.toString());
-                                    long delta1 = d2.getTime() - d1.getTime();
-                                    long delta2 = delta1;
-                                    // don't harvest into the future (now +/- 15 seconds)
-                                    if (d2.getTime() + delta2 < new Date().getTime() - 15000L) {
-                                        d1.setTime(d1.getTime() + delta1);
-                                        d2.setTime(d2.getTime() + delta2);
-                                        oaiFrom = DateUtil.formatDateISO(d1);
-                                        request.setFrom(d1);
-                                        oaiUntil = DateUtil.formatDateISO(d2);
-                                        request.setUntil(d2);
+                                if (lastHttpStatusCode == 200) {
+                                    Object resumptionToken = oaiState.get("resumptionToken");
+                                    if (resumptionToken != null) {
+                                        ResumptionToken token = ResumptionToken.newToken(resumptionToken.toString());
+                                        request.setResumptionToken(token);
                                         shouldHarvest = true;
+                                    } else {
+                                        Object lastFrom = oaiState.get("last_from");
+                                        Object lastUntil = oaiState.get("last_until");
+                                        if (lastFrom == null && lastUntil == null) {
+                                            // repeat harvest
+                                            shouldHarvest = true;                                            
+                                        } else {
+                                            // advance time period
+                                            Date d1 = DateUtil.parseDateISO(lastFrom.toString());
+                                            Date d2 = DateUtil.parseDateISO(lastUntil.toString());
+                                            long delta1 = d2.getTime() - d1.getTime();
+                                            long delta2 = delta1;
+                                            // don't harvest into the future (now +/- 15 seconds)
+                                            if (d2.getTime() + delta2 < new Date().getTime() - 15000L) {
+                                                d1.setTime(d1.getTime() + delta1);
+                                                d2.setTime(d2.getTime() + delta2);
+                                                oaiFrom = DateUtil.formatDateISO(d1);
+                                                request.setFrom(d1);
+                                                oaiUntil = DateUtil.formatDateISO(d2);
+                                                request.setUntil(d2);
+                                                shouldHarvest = true;
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 } catch (Exception e) {
-                    logger.warn("failed to get last_OAI state, throttling", e);
+                    logger.warn("failed to get last_OAI state, throttling...", e);
                     try {
                         Thread.sleep(60000);
                     } catch (InterruptedException e1) {
@@ -309,7 +315,7 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                     }
                 }
                 if (!shouldHarvest) {
-                    delay();
+                    delay("harvest stopped");
                     continue;
                 }
                 logger.info("OAI harvest: URL [{}] set [{}] metadataPrefix [{}] from [{}] until [{}] resumptionToken [{}]",
@@ -442,20 +448,19 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                     }
                 } while (request.getResumptionToken() != null && !failure && !closed);
                 if (!closed) {
-                    delay();
+                    delay("next harvest");
                 }
             }
         }
     }
 
-    private void delay() {
+    private void delay(String reason) {
         if (oaiPoll.millis() > 0L) {
-            logger.info("waiting {} for next run of URL [{}] set [{}] metadataPrefix [{}]",
-                    oaiPoll, oaiUrl, oaiSet, oaiMetadataPrefix);
+            logger.info("{}, waiting {}, URL [{}] set [{}] metadataPrefix [{}]",
+                    reason, oaiPoll, oaiUrl, oaiSet, oaiMetadataPrefix);
             try {
                 Thread.sleep(oaiPoll.millis());
             } catch (InterruptedException e1) {
-                
             }
         }
     }
