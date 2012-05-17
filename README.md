@@ -25,7 +25,7 @@ Many OAI rivers can run in parallel. A list of OAI servers can be found [here] (
 Installation
 ------------
 
-In order to install the plugin, simply run: `bin/plugin -install jprante/elasticsearch-river-oai/1.1.1`.
+In order to install the plugin, simply run: `bin/plugin -install jprante/elasticsearch-river-oai/1.2.1`.
 
     -------------------------------------
     | OAI Plugin     | ElasticSearch    |
