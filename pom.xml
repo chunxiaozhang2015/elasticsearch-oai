@@ -6,7 +6,7 @@
     <groupId>org.elasticsearch</groupId>
     <artifactId>elasticsearch-river-oai</artifactId>
     <name>elasticsearch-river-oai</name>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
     <packaging>jar</packaging>
     <description>OAI-PMH River for ElasticSearch</description>
     <inceptionYear>2012</inceptionYear>

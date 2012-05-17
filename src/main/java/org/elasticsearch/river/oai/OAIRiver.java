@@ -116,7 +116,7 @@ public class OAIRiver extends AbstractRiverComponent implements River {
         if (settings.settings().containsKey("index")) {
             Map<String, Object> indexSettings = (Map<String, Object>) settings.settings().get("index");
             indexName = XContentMapValues.nodeStringValue(indexSettings.get("index"), URI.create(oaiUrl).getHost());
-            typeName = XContentMapValues.nodeStringValue(indexSettings.get("type"), oaiMetadataPrefix);
+            typeName = XContentMapValues.nodeStringValue(indexSettings.get("type"), oaiSet);
             bulkSize = XContentMapValues.nodeIntegerValue(indexSettings.get("bulk_size"), 100);
             maxBulkRequests = XContentMapValues.nodeIntegerValue(indexSettings.get("max_bulk_requests"), 30);
             if (indexSettings.containsKey("bulk_timeout")) {
@@ -125,8 +125,8 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                 bulkTimeout = TimeValue.timeValueMillis(60000);
             }
         } else {
-            indexName = "oai";
-            typeName = "default";
+            indexName = URI.create(oaiUrl).getHost();
+            typeName = oaiSet;
             bulkSize = 100;
             maxBulkRequests = 30;
             bulkTimeout = TimeValue.timeValueMillis(60000);
