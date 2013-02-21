@@ -25,15 +25,19 @@ Many OAI rivers can run in parallel. A list of OAI servers can be found [here] (
 Installation
 ------------
 
-In order to install the plugin, simply run: `bin/plugin -install jprante/elasticsearch-river-oai/1.2.1`.
+The version is 2.0.0 (21 Feb 2013)
 
-    -------------------------------------
-    | OAI Plugin     | ElasticSearch    |
-    -------------------------------------
-    | master         | 0.19.3 -> master |
-    -------------------------------------
-    | 1.2.1          | 0.19.3           |
-    -------------------------------------
+Prerequisites:
+
+- Elasticsearch 0.20.x
+
+- Java 7 Runtime Environment
+
+In order to install the plugin, run: `bin/plugin -url http://bit.ly/Vzerd7 -install elasticsearch-river-oai`.
+
+Bintray site: https://bintray.com/pkg/show/general/jprante/elasticsearch-plugins/elasticsearch-river-oai
+
+Download link: http://dl.bintray.com/content/jprante/elasticsearch-plugins/org/xbib/elasticsearch/elasticsearch-river-oai/2.0.0/elasticsearch-river-oai-2.0.0.zip?direct
 
 
 Documentation
@@ -119,8 +123,7 @@ Each OAI response will be indexed by a single bulk. A bulk size can be defined, 
 	        "index" : "metadata",
 	        "type" : "oai",
 	        "bulk_size" : 100,
-	        "max_bulk_requests" : 30,
-	        "bulk_timeout" : "60s"
+	        "max_bulk_requests" : 30
 	    }
 	}'
 
@@ -238,6 +241,4 @@ Notes
 -----
 
 The OAI river is using the OAI module of the xbib framework, an upcoming effort to build scalable and efficient bibliographic semantic web infrastructures, which will be released soon as open source.
-
-This plugin requires Java 1.7.
 
