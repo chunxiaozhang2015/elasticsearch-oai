@@ -21,12 +21,12 @@ package org.elasticsearch.river.oai.support;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.support.ClientIngest;
-import org.elasticsearch.client.support.ClientIngestSupport;
+import org.elasticsearch.client.support.ingest.NodeClientIngestSupport;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+
 import org.xbib.date.DateUtil;
 import org.xbib.elasticsearch.ElasticsearchResourceSink;
 import org.xbib.io.NullWriter;
@@ -175,7 +175,7 @@ public class Harvester implements Runnable {
         logger.info("starting OAI harvester: URL [{}], set [{}], metadataPrefix [{}], from [{}], until [{}], indexing to [{}]/[{}], poll [{}]",
                 oaiUrl, oaiSet, oaiMetadataPrefix, oaiFrom, oaiUntil, indexName, typeName, oaiPoll);
 
-        final ClientIngest ingest = new ClientIngestSupport(client, indexName, typeName,
+        final NodeClientIngestSupport ingest = new NodeClientIngestSupport(client, indexName, typeName,
                 maxBulkActions, maxConcurrentRequests);
         final ResourceContext context = new SimpleResourceContext();
         final ElasticsearchResourceSink sink = new ElasticsearchResourceSink(ingest);
@@ -199,12 +199,12 @@ public class Harvester implements Runnable {
             try {
                 client.admin().indices().prepareRefresh(riverIndexName).execute().actionGet();
                 GetResponse get = client.prepareGet(riverIndexName, riverName, "_last").execute().actionGet();
-                if (!get.exists()) {
+                if (!get.isExists()) {
                     // first invocation
                     shouldHarvest = true;
                 } else {
                     // retrieve last OAI state (dates, resumption token)
-                    Map<String, Object> oaiState = (Map<String, Object>) get.sourceAsMap().get("oai");
+                    Map<String, Object> oaiState = (Map<String, Object>) get.getSourceAsMap().get("oai");
                     if (oaiState != null) {
                         Object lastHttpStatus = oaiState.get("last_http_status");
                         int lastHttpStatusCode;
@@ -306,6 +306,7 @@ public class Harvester implements Runnable {
                 }
 
             };
+            xmlHandler.setDefaultNamespace("oaidc","http://www.openarchives.org/OAI/2.0/");
 
             MetadataReader metadataReader = new MetadataReader() {
 
@@ -317,7 +318,6 @@ public class Harvester implements Runnable {
                 @Override
                 public void endDocument() throws SAXException {
                     xmlHandler.endDocument();
-                    // emergency, no ID found yet
                     if (context.resource().id() == null) {
                         // host = index, query = type, fragment = id
                         // let the identifier in the header be the resource ID

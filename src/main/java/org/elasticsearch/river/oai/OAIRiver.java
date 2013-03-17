@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.river.oai;
 
+import org.elasticsearch.ElasticSearchIllegalArgumentException;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.unit.TimeValue;
@@ -62,6 +63,8 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                     .oaiProxyHost(XContentMapValues.nodeStringValue(oaiSettings.get("proxyhost"), null))
                     .oaiProxyPort(XContentMapValues.nodeIntegerValue(oaiSettings.get("proxyport"), 0))
                     .oaiTimeout(XContentMapValues.nodeTimeValue(oaiSettings.get("timeout"), TimeValue.timeValueSeconds(60)));
+        } else {
+            throw new ElasticSearchIllegalArgumentException("no 'oai' settings in river settings?");
         }
         if (settings.settings().containsKey("index")) {
             Map<String, Object> indexSettings = (Map<String, Object>) settings.settings().get("index");
@@ -70,6 +73,11 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                     .type(XContentMapValues.nodeStringValue(indexSettings.get("type"), "oai"))
                     .maxBulkActions(XContentMapValues.nodeIntegerValue(indexSettings.get("bulk_size"), 100))
                     .maxConcurrentRequests(XContentMapValues.nodeIntegerValue(indexSettings.get("max_bulk_requests"), 30));
+        } else {
+            harvester.index("oai")
+                    .type("oai")
+                    .maxBulkActions(100)
+                    .maxConcurrentRequests(30);
         }
     }
 

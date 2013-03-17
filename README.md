@@ -25,19 +25,22 @@ Many OAI rivers can run in parallel. A list of OAI servers can be found [here] (
 Installation
 ------------
 
-The version is 2.0.0 (21 Feb 2013)
-
 Prerequisites:
 
-- Elasticsearch 0.20.x
+- Elasticsearch 0.90.0.Beta1+
 
 - Java 7 Runtime Environment
 
-In order to install the plugin, run: `bin/plugin -url http://bit.ly/Vzerd7 -install elasticsearch-river-oai`.
+Binaries are available at Bintray:
 
-Bintray site: https://bintray.com/pkg/show/general/jprante/elasticsearch-plugins/elasticsearch-river-oai
+https://bintray.com/pkg/show/general/jprante/elasticsearch-plugins/elasticsearch-river-oai
 
-Download link: http://dl.bintray.com/content/jprante/elasticsearch-plugins/org/xbib/elasticsearch/elasticsearch-river-oai/2.0.0/elasticsearch-river-oai-2.0.0.zip?direct
+Version 2.1.0
+-------------
+
+The current version is 2.1.0 (17 Mar 2013)
+
+    `bin/plugin -url http://bit.ly/YAkqeO -install elasticsearch-river-oai`
 
 
 Documentation
