@@ -22,7 +22,7 @@ Build status
 Prerequisites
 -------------
 
-  - Java 8 JDK
+- Java 8 JDK
 
 Versions
 --------
@@ -54,7 +54,7 @@ The Maven project site is available at `Github <http://jprante.github.io/elastic
 Issues
 ------
 
-All feedback is welcome! If you find issues, please post them at `Github <http://github.com/elasticsearch-river-oai/issues>`_
+All feedback is welcome! If you find issues, please post them at `Github <https://github.com/jprante/elasticsearch-river-oai/issues>`_
 
 Documentation
 =============
@@ -66,19 +66,18 @@ Starting a river instance
 -------------------------
 
 A `river <http://www.elasticsearch.org/guide/reference/river/>`_ runs within a running node
-of an Elasticsearch cluster and pulls data. A feeder is a standalone plugin that can push
-data into a remote Elasticsearch cluster and runs outside an Elasticsearch node.
+of an Elasticsearch cluster and pulls data.
 
 Setting up a river is as simple as executing the following command::
 
-	curl -XPUT 'localhost:9200/_river/my_arxiv_river/_meta' -d '{
+    curl -XPUT 'localhost:9200/_river/my_arxiv_river/_meta' -d '{
       "type" : "oai",
       "oai" : {
         "input" : [
             "http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=oai_dc&from=2000-01-01&until=2015-01-01"
         ]
       }
-	}'
+    }'
 
 This call will create a river that harvests all the Dublin Core metadata
 from the arXiv, the first and most prominent public OAI data provider. This will take
@@ -87,7 +86,7 @@ harvested documents.
 
 A full example would be::
 
-	curl -XPUT 'localhost:9200/_river/my_arxiv_river/_meta' -d '{
+    curl -XPUT 'localhost:9200/_river/my_arxiv_river/_meta' -d '{
       "type" : "oai",
       "oai" : {
         "input" : [
@@ -104,17 +103,20 @@ A full example would be::
         "trace" : false,
         "scrubxml" : false
       }
-	}'
+    }'
 
 
 Starting a feeder instance
 --------------------------
 
-Setting up a standalone feeder is also simple. Download Elasticsearch and install it
- as you would for a node. Install the plugin as you would for a river. Instead of
- starting the node, change into the `plugins/oai` folder and execute
+A feeder is a standalone plugin that can push data into a remote Elasticsearch
+cluster and runs outside an Elasticsearch node.
 
-    bash bin/arxiv/arxiv.sh
+Setting up a standalone feeder is also simple. Download Elasticsearch and install it
+as you would for a node. Install the plugin as you would for a river. Instead of
+starting the node, change into the `plugins/oai` folder and execute::
+
+    bash bin/feeder/arxiv/arxiv.sh
 
  where the shell script has the content::
 
