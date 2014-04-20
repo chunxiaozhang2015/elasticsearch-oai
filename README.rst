@@ -118,7 +118,7 @@ starting the node, change into the `plugins/oai` folder and execute::
 
     bash bin/feeder/arxiv/arxiv.sh
 
- where the shell script has the content::
+where the shell script has the content::
 
     #!/bin/sh
 
@@ -157,7 +157,7 @@ starting the node, change into the `plugins/oai` folder and execute::
 
 Before running, you should configure where your Java 8 installation is located.
 
-The logging can be controlled by the `log4j.properties` file in the plugin folder.
+The logging can be controlled by the ``log4j.properties`` file in the plugin folder.
 
 Parameters
 ----------
@@ -166,7 +166,7 @@ input - a list of URLs for harvesting
 
 concurrency - how many URLs should be processed simultaneously
 
-handler - `xml` for XML metadata content, `rdf` for RDF/XML
+handler - ``xml`` for XML metadata content, ``rdf`` for RDF/XML
 
 index - the name of the Elasticsearch index
 
@@ -180,13 +180,13 @@ maxbulkactions - the maximum number of actions in a bulk request
 
 maxconcurrentbulkrequests - the maximum number of concurrent bulk requests
 
-trace - if `true`, the harvested content will be logged. Default is `false`
+trace - if ``true``, the harvested content will be logged. Default is ``false``
 
-scrubxml - if `true`, the harvested content will be scrubbed from invalid XML characters. Default is `true`
+scrubxml - if ``true``, the harvested content will be scrubbed from invalid XML characters. Default is ``true``
 
-elasticsearch - an URI to address an Elasticsearch node. URI parameter `es.cluster.name` determines the cluster name
+elasticsearch - an URI to address an Elasticsearch node. URI parameter ``es.cluster.name`` determines the cluster name
 
-client - `bulk` selects the default Elasticsearch BulkProcessor API, `ingest` selects an xbib implementation
+client - ``bulk`` selects the default Elasticsearch BulkProcessor API, ``ingest`` selects an xbib implementation
 
 
 License
