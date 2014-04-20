@@ -9,6 +9,7 @@ public class Runner {
         try {
             Class clazz = Class.forName(args[0]);
             Tool tool = (Tool)clazz.newInstance();
+            Runtime.getRuntime().addShutdownHook(tool.shutdownHook());
             tool.readFrom(new InputStreamReader(System.in, "UTF-8")).run();
         } catch (Throwable e) {
             e.printStackTrace();

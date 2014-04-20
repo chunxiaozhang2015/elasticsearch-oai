@@ -5,22 +5,22 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.river.RiversModule;
 
-public class OAIRiverPlugin extends AbstractPlugin {
+public class OAIPlugin extends AbstractPlugin {
 
     @Inject
-    public OAIRiverPlugin() {
+    public OAIPlugin() {
     }
 
     @Override
     public String name() {
-        return "oai-river" + "-"
+        return "oai-"
                 + Build.getInstance().getVersion() + "-"
                 + Build.getInstance().getShortHash();
     }
 
     @Override
     public String description() {
-        return "OAI River Plugin";
+        return "OAI Plugin";
     }
 
     public void onModule(RiversModule module) {

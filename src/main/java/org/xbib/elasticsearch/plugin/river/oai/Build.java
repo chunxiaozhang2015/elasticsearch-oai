@@ -20,8 +20,8 @@ public class Build {
         String date = "NA";
 
         try {
-            String pluginName = OAIRiverPlugin.class.getName();
-            Enumeration<URL> e = OAIRiverPlugin.class.getClassLoader().getResources("es-plugin.properties");
+            String pluginName = OAIPlugin.class.getName();
+            Enumeration<URL> e = OAIPlugin.class.getClassLoader().getResources("es-plugin.properties");
             while (e.hasMoreElements()) {
                 URL url = e.nextElement();
                 InputStream in = url.openStream();

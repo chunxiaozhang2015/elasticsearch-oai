@@ -98,7 +98,7 @@ public class OAIFeeder extends Feeder {
                 logger.error(e.getMessage(), e);
                 request = null;
             }
-        } while (request != null);
+        } while (request != null && !done);
         oaiClient.close();
     }
 

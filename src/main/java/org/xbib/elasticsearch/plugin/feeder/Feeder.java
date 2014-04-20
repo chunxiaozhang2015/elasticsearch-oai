@@ -38,13 +38,13 @@ public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,
 
     protected static Queue<URI> input;
 
-    protected MetricSimplePipelineExecutor<T,R,P> executor;
-
     protected static Ingest client;
 
     protected static ResourceSink sink;
 
-    private boolean done = false;
+    protected static boolean done = false;
+
+    private MetricSimplePipelineExecutor<T,R,P> executor;
 
     public Feeder<T,R,P> settings(Settings newSettings) {
         settings = newSettings;
@@ -59,6 +59,7 @@ public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,
                 .maxActionsPerBulkRequest(maxbulkactions)
                 .maxConcurrentBulkRequests(maxconcurrentbulkrequests)
                 .newClient(c);
+        done = false;
     }
 
     @Override
@@ -69,6 +70,7 @@ public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,
 
     @Override
     public void run() {
+
         try {
             logger.info("preparing run with settings {}", settings.getAsMap());
             prepare();
@@ -83,11 +85,13 @@ public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         } finally {
+            done = true;
             try {
-                cleanup();
                 if (executor != null) {
                     executor.shutdown();
+                    executor = null;
                 }
+                cleanup();
             } catch (InterruptedException e) {
                 logger.warn("interrupted", e);
             } catch (IOException e) {
@@ -139,14 +143,13 @@ public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,
 
     protected Feeder<T,R,P> cleanup() throws IOException {
         client.flush().stopBulk();
-        // set to requested replica level
         client.updateReplicaLevel(settings.getAsInt("replica", 0));
         return this;
     }
 
     @Override
     public void close() throws IOException {
-        logger.info("close (no op)");
+        logger.info("closing");
     }
 
     @Override
@@ -177,6 +180,32 @@ public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,
     @Override
     public void error(Pipeline<MeterMetric, URIPipelineElement> pipeline, URIPipelineElement request, PipelineException error) {
         logger.error(error.getMessage(), error);
+    }
+
+    @Override
+    public Thread shutdownHook() {
+        return new Thread() {
+            public void run() {
+                done = true;
+                try {
+                    if (executor != null) {
+                        executor.shutdown();
+                        executor = null;
+                    }
+                    if (client != null) {
+                        client.stopBulk();
+                        client.updateReplicaLevel(settings.getAsInt("replica", 0));
+                        client.shutdown();
+                        client = null;
+                    }
+                } catch (InterruptedException e) {
+                    logger.warn("interrupted", e);
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
+                logger.info("run completed");
+            }
+        };
     }
 
     protected abstract PipelineProvider<P> pipelineProvider();
