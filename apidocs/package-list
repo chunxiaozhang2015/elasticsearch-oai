@@ -1,2 +1,3 @@
-org.elasticsearch.plugin.river.oai
-org.elasticsearch.river.oai
+org.xbib.elasticsearch.plugin.feeder
+org.xbib.elasticsearch.plugin.feeder.oai
+org.xbib.elasticsearch.plugin.river.oai
