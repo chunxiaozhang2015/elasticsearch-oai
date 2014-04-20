@@ -12,36 +12,46 @@
             <unpack>false</unpack>
             <scope>compile</scope>
             <includes>
-                <include>org.xbib:xbib-elasticsearch</include>
-                <include>org.xbib:xbib-oai</include>
-                <include>org.xbib:xbib-content</include>
-                <include>org.xbib:xbib-elements</include>
-                <include>org.xbib:xbib-util</include>
-                <include>org.xbib:xbib-logging</include>
-                <include>org.xbib.elasticsearch:elasticsearch-transport-support</include>
+                <include>org.xbib.elasticsearch.plugin:elasticsearch-river-oai</include>
+                <include>org.xbib.elasticsearch.plugin:elasticsearch-support</include>
+                <include>org.xbib:elasticsearch</include>
+                <include>org.xbib:pipeline</include>
+                <include>org.xbib:http</include>
+                <include>org.xbib:compress</include>
+                <include>org.xbib:util</include>
+                <include>org.xbib:content</include>
+                <include>org.xbib:elements</include>
+                <include>org.xbib:iso2709</include>
+                <include>org.xbib:rdf</include>
+                <include>org.xbib:oai</include>
+                <include>org.xbib:logging</include>
+                <include>io.netty</include>
                 <include>xerces:xercesImpl</include>
                 <include>xalan:xalan</include>
                 <include>xalan:serializer</include>
-                <include>com.ning:async-http-client</include>
-                <include>io.netty:netty</include>
                 <include>com.google.guava:guava</include>
-                <include>com.fasterxml.jackson.core:jackson-core</include>
-                <include>joda-time:joda-time</include>
+                <include>com.fasterxml.jackson.core</include>
+                <include>com.fasterxml.jackson.dataformat</include>
                 <include>org.slf4j:slf4j-api</include>
                 <include>org.slf4j:slf4j-log4j12</include>
             </includes>
         </dependencySet>
-    </dependencySets>  
+    </dependencySets>
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}</directory>
+            <directory>${project.basedir}</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
-                <include>*.jar</include>
+                <include>bin/*.sh</include>
+                <include>bin/**/*.sh</include>
             </includes>
-            <excludes>
-                <exclude>*sources*.jar</exclude>    
-            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/src/test/resources</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>log4j.properties</include>
+            </includes>
         </fileSet>
     </fileSets>
 </assembly>
