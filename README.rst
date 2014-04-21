@@ -30,7 +30,7 @@ Versions
 =============  ===========  =================
 ES version     Plugin       Release date
 -------------  -----------  -----------------
-1.1.0          1.1.0.0      Apr 20, 2014
+1.1.0          1.1.0.0      Apr 21, 2014
 =============  ===========  =================
 
 Installation
@@ -44,7 +44,8 @@ Checksum
 --------
 
 File: elasticsearch-river-oai-1.1.0.0.zip
-SHA1: 2bd2d0813880d5a6426e2c6a34dc9b05945f12ba
+
+SHA1: 839f4bc635248b31e5522e21d569c5458b3e2126
 
 Project docs
 ------------
