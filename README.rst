@@ -192,7 +192,7 @@ Example for a geo search around Cologne::
 
 Here is a screenshot of an example document.
 
-.. image:: ../../../elasticsearch-river-oai/raw/master/src/site/resources/europeana-1914-1918.png
+.. image:: ../../../elasticsearch-river-oai/raw/master/src/site/resources/europeana-1914-1918-example.png
 
 
 Documentation
