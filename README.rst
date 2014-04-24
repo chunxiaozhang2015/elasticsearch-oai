@@ -8,7 +8,10 @@ OAI Plugin for Elasticsearch
 The `Open Archives Initiative - Protocol for Metadata Harvesting (OAI-PMH) <http://www.openarchives.org/pmh/>`_
 plugin allows to harvest metadata into Elasticsearch.
 
-The plugin allows to harvest DC / XML / RDF formats from OAI data providers (OAI servers).
+This `plugin <http://www.elasticsearch.org/guide/reference/modules/plugins.html>`_
+for Elasticsearch can run as a river (embedded in an Elasticsearch node) or a feeder (standalone JVM).
+
+It harvests DC / XML / RDF formats from OAI data providers (OAI servers).
 A list of OAI servers can be found `here <http://www.openarchives.org/Register/BrowseSites>`_.
 The metadata is internally represented as resources, using Resource Description Framework (RDF) of
 the W3C Semantic Web Initiative, before the resources are serialized into JSON-LD for
@@ -211,9 +214,6 @@ Here is a screenshot of an example document.
 
 Documentation
 =============
-
-This `plugin <http://www.elasticsearch.org/guide/reference/modules/plugins.html>`_
-for Elasticsearch can run as a river or a feeder.
 
 Starting a river instance
 -------------------------
