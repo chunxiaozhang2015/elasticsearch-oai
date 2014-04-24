@@ -28,8 +28,8 @@
 <span class="sourceLineNo">020</span>        String date = "NA";<a name="line.20"></a>
 <span class="sourceLineNo">021</span><a name="line.21"></a>
 <span class="sourceLineNo">022</span>        try {<a name="line.22"></a>
-<span class="sourceLineNo">023</span>            String pluginName = OAIRiverPlugin.class.getName();<a name="line.23"></a>
-<span class="sourceLineNo">024</span>            Enumeration&lt;URL&gt; e = OAIRiverPlugin.class.getClassLoader().getResources("es-plugin.properties");<a name="line.24"></a>
+<span class="sourceLineNo">023</span>            String pluginName = OAIPlugin.class.getName();<a name="line.23"></a>
+<span class="sourceLineNo">024</span>            Enumeration&lt;URL&gt; e = OAIPlugin.class.getClassLoader().getResources("es-plugin.properties");<a name="line.24"></a>
 <span class="sourceLineNo">025</span>            while (e.hasMoreElements()) {<a name="line.25"></a>
 <span class="sourceLineNo">026</span>                URL url = e.nextElement();<a name="line.26"></a>
 <span class="sourceLineNo">027</span>                InputStream in = url.openStream();<a name="line.27"></a>
