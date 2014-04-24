@@ -6,19 +6,17 @@ java="/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/bin/java"
 echo '
 {
     "input" : [
-        "http://europeana1914-1918.eu/oai?metadataPrefix=oai_edm&from=2000-01-01T00:00:00Z&until=2015-01-01T00:00:00Z"
+        "http://doaj.org/oai?verb=ListRecords&metadataPrefix=oai_dc&from=2000-01-01&until=2014-04-17"
     ],
-    "handler" : "rdf",
+    "handler" : "xml",
     "elasticsearch" : "es://localhost:9300?es.cluster.name=elasticsearch",
-    "index" : "europeana1914-1918",
-    "type" : "oai",
-    "shards" : 3,
-    "replica" : 0,
-    "maxbulkactions" : 100,
-    "maxconcurrentbulkrequests" : 10,
-    "client" : "ingest",
-    "scrubxml" : true,
-    "trace" : true
+    "index" : "doaj",
+    "type" : "oai_dc",
+    "maxbulkactions" : 1000,
+    "maxconcurrentbulkrequests" : 20,
+    "client" : "bulk",
+    "trace" : false,
+    "scrubxml" : false
 }
 ' | ${java} \
     -cp $(pwd):$(pwd)/\*:$(pwd)/../../lib/\* \

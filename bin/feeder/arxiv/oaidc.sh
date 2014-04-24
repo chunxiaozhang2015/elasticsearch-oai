@@ -12,13 +12,13 @@ java="/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/bin/java"
 echo '
 {
     "input" : [
-        "http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXiv&from=2000-01-01&until=2015-01-01"
+        "http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=oai_dc&from=2000-01-01&until=2015-01-01"
     ],
     "concurrency" : 1,
     "handler" : "xml",
     "elasticsearch" : "es://localhost:9300?es.cluster.name=elasticsearch",
     "index" : "arxiv",
-    "type" : "arxiv",
+    "type" : "oai_dc",
     "maxbulkactions" : 1000,
     "maxconcurrentbulkrequests" : 1,
     "client" : "bulk",

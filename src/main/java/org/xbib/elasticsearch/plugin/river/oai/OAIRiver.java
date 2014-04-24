@@ -6,26 +6,30 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.river.AbstractRiverComponent;
-import org.elasticsearch.river.River;
 import org.elasticsearch.river.RiverIndexName;
 import org.elasticsearch.river.RiverName;
 import org.elasticsearch.river.RiverSettings;
 
 import org.xbib.common.settings.Settings;
+import org.xbib.elasticsearch.plugin.river.StatefulRiver;
+import org.xbib.elasticsearch.plugin.river.RiverState;
 import org.xbib.elasticsearch.plugin.feeder.oai.OAIFeeder;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 
 import static org.xbib.common.settings.ImmutableSettings.settingsBuilder;
 
-public class OAIRiver extends AbstractRiverComponent implements River {
+public class OAIRiver extends AbstractRiverComponent implements StatefulRiver {
 
     private volatile Thread harvesterThread;
 
     private final OAIFeeder feeder;
 
     private final Client client;
+
+    private final RiverState riverState;
 
     @Inject
     public OAIRiver(RiverName riverName, RiverSettings riverSettings,
@@ -52,26 +56,46 @@ public class OAIRiver extends AbstractRiverComponent implements River {
                 .build();
 
         feeder = new OAIFeeder();
-        feeder.settings(settings);
+        feeder.setSettings(settings);
+
+        riverState = new RiverState(new Date())
+                .setType(riverName().getType())
+                .setName(riverName().getName())
+                .setCoordinates(riverIndexName, riverName.getName(), "_custom");
+
     }
 
     @Override
     public void start() {
         feeder.setClient(client);
+        try {
+            riverState.load(client);
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        } finally {
+            feeder.setRiverState(riverState);
+        }
         harvesterThread = EsExecutors.daemonThreadFactory(settings.globalSettings(),
                 "oai_river(" + riverName().name() + ")").newThread(feeder);
-        harvesterThread.start();
+        feeder.schedule(harvesterThread);
     }
 
     @Override
     public void close() {
         logger.info("closing oai_river({})", riverName.name());
         try {
+            riverState.save(client);
             feeder.close();
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
-        harvesterThread.interrupt();
+        if (harvesterThread != null) {
+            harvesterThread.interrupt();
+        }
+    }
+
+    public RiverState getRiverState() {
+        return riverState;
     }
 
 }

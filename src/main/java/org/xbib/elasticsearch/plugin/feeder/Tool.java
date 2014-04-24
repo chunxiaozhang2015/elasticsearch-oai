@@ -7,6 +7,8 @@ public interface Tool extends Runnable {
 
     Tool readFrom(Reader reader);
 
+    void schedule(Thread thread);
+
     Thread shutdownHook();
 
 }

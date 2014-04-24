@@ -30,7 +30,7 @@ Versions
 =============  ===========  =================
 ES version     Plugin       Release date
 -------------  -----------  -----------------
-1.1.0          1.1.0.0      Apr 21, 2014
+1.1.0          1.1.0.0      Apr 24, 2014
 =============  ===========  =================
 
 Installation
@@ -56,6 +56,144 @@ Issues
 ------
 
 All feedback is welcome! If you find issues, please post them at `Github <https://github.com/jprante/elasticsearch-river-oai/issues>`_
+
+Example: ArXiv
+==============
+
+The following standalone script starts a feeder for harvesting `ArXiv <http://arxiv.org>` and pushing the docs into Elasticsearch::
+
+    #!/bin/sh
+
+    # Mac OS X
+    java="/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/bin/java"
+
+    # Linux
+    #java="/usr/java/jdk1.8.0/bin/java"
+
+    # arxiv.org is throttling to 20 sec by HTTP STatus 503 retry-after.
+    # concurrency should be 1.
+
+    echo '
+    {
+        "input" : [
+            "http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXiv&from=2000-01-01&until=2015-01-01"
+        ],
+        "concurrency" : 1,
+        "handler" : "xml",
+        "index" : "arxiv",
+        "type" : "arxiv",
+        "maxbulkactions" : 1000,
+        "maxconcurrentbulkrequests" : 1,
+        "trace" : false,
+        "scrubxml" : false,
+        "elasticsearch" : "es://localhost:9300?es.cluster.name=elasticsearch",
+        "client" : "bulk"
+    }
+    ' | ${java} \
+        -cp $(pwd):$(pwd)/\*:$(pwd)/../../lib/\* \
+        org.xbib.elasticsearch.plugin.feeder.Runner \
+        org.xbib.elasticsearch.plugin.feeder.oai.OAIFeeder
+
+
+ArXiv is using the OAI retry-wait mechanism which forces the client to pause for 20 seconds.
+As a result, the harvesting is slow.
+
+In the examples, you find the corresponding river script::
+
+    #!/bin/sh
+
+    curl -XPUT 'localhost:9200/_river/my_arxiv_river/_meta' -d '
+    {
+      "type" : "oai",
+      "oai" : {
+        "input" : [
+            "http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXiv&from=2000-01-01&until=2015-01-01"
+        ],
+        "concurrency" : 1,
+        "handler" : "xml",
+        "index" : "arxiv",
+        "type" : "arxiv",
+        "maxbulkactions" : 1000,
+        "maxconcurrentbulkrequests" : 1,
+        "trace" : false,
+        "scrubxml" : false
+      }
+    }
+    '
+
+
+Example: Europeana 1914-1918
+============================
+
+With the following script, you can start a feeder that collects all the material from Europeana 1914-1918::
+
+    #!/bin/sh
+
+    java="/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/bin/java"
+    #java="/usr/java/jdk1.8.0/bin/java"
+
+    echo '
+    {
+        "input" : [
+            "http://europeana1914-1918.eu/oai?verb=ListRecords&metadataPrefix=oai_edm&from=2010-01-01T00:00:00Z&until=2015-01-01T00:00:00Z"
+        ],
+        "handler" : "rdf",
+        "index" : "europeana1914-1918",
+        "type" : "oai_edm",
+        "maxbulkactions" : 1000,
+        "maxconcurrentbulkrequests" : 10,
+        "scrubxml" : false,
+        "trace" : false,
+        "deref_index" : "europeana1914-1918",
+        "deref_type" : "oai_edm",
+        "deref_field" : ["skos:prefLabel","location"],
+        "deref_prefix" : "europeana19141918:",
+        "elasticsearch" : "es://localhost:9300?es.cluster.name=elasticsearch",
+        "client" : "bulk"
+    }
+    ' | ${java} \
+        -cp $(pwd):$(pwd)/\*:$(pwd)/../../lib/\* \
+        org.xbib.elasticsearch.plugin.feeder.Runner \
+        org.xbib.elasticsearch.plugin.feeder.oai.OAIFeeder
+
+As you can see, the Europeana RDF data model `EDM <http://pro.europeana.eu/edm-documentation>`_ is harvested.
+
+The WGS84 Geo coordinates are transformed to GeoJSON ``location`` field so they can be used for Elasticsearch.
+A preconfigured mapping file maps ``location`` to Elasticsearch geo points.
+
+All document fields with prefix ``europeana19141918:`` are expanded by a dereference mechanism with
+the information from the fields ``skos:prefLabel`` and ``location``.
+
+The result ``providedCHO`` documents can be use for Europeana 1914-1918 geo search.
+
+Example for a geo search around Cologne::
+
+    curl -XPOST '0:9200/europeana1914-1918/_search' -d '
+    {
+      "query" : {
+        "filtered" : {
+            "query" : {
+                "match_all" : { }
+            },
+            "filter" : {
+                "geo_distance" : {
+                    "distance" : "20km",
+                    "location" : {
+                        "lat" : 51,
+                        "lon" : 7
+                    }
+                }
+            }
+        }
+      }
+    }
+    '
+
+
+Here is a screenshot of an example document.
+
+.. image:: ../../../elasticsearch-river-oai/raw/master/src/site/resources/europeana-1914-1918.png
+
 
 Documentation
 =============
@@ -115,40 +253,33 @@ cluster and runs outside an Elasticsearch node.
 
 Setting up a standalone feeder is also simple. Download Elasticsearch and install it
 as you would for a node. Install the plugin as you would for a river. Instead of
-starting the node, change into the `plugins/oai` folder and execute::
+starting the node, change into the `plugins/oai` folder.
 
-    bash bin/feeder/arxiv/arxiv.sh
+ Then you can execute feeder script for example for indexing DOAJ artices::
+
+    bash bin/feeder/doaj/article/oaidc.sh
 
 where the shell script has the content::
 
     #!/bin/sh
 
-    # Mac OS X
     java="/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/bin/java"
-
-    # Linux
     #java="/usr/java/jdk1.8.0/bin/java"
-
-    # arxiv.org is throttling to 20 sec by HTTP STatus 503 retry-after.
-    # concurrency should be 1.
 
     echo '
     {
         "input" : [
-            "http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXiv&from=2000-01-01&until=2015-01-01"
+            "http://doaj.org/oai.article?verb=ListRecords&metadataPrefix=oai_dc&from=2000-01-01&until=2015-01-01"
         ],
-        "concurrency" : 1,
         "handler" : "xml",
-        "index" : "arxiv",
-        "type" : "arxiv",
-        "shards" : 1,
-        "replica" : 0,
-        "maxbulkactions" : 1000,
-        "maxconcurrentbulkrequests" : 1,
-        "trace" : false,
-        "scrubxml" : false,
         "elasticsearch" : "es://localhost:9300?es.cluster.name=elasticsearch",
-        "client" : "bulk"
+        "index" : "doajarticle",
+        "type" : "oai_dc",
+        "maxbulkactions" : 1000,
+        "maxconcurrentbulkrequests" : 20,
+        "client" : "bulk",
+        "trace" : false,
+        "scrubxml" : false
     }
     ' | ${java} \
         -cp $(pwd):$(pwd)/\*:$(pwd)/../../lib/\* \
@@ -156,7 +287,10 @@ where the shell script has the content::
         org.xbib.elasticsearch.plugin.feeder.oai.OAIFeeder
 
 
-Before running, you should configure where your Java 8 installation is located.
+Before running, please check where your Java 8 installation is located, and fix the ``java`` variable setting.
+
+Logging
+-------
 
 The logging can be controlled by the ``log4j.properties`` file in the plugin folder.
 
@@ -188,6 +322,7 @@ scrubxml - if ``true``, the harvested content will be scrubbed from invalid XML 
 elasticsearch - an URI to address an Elasticsearch node. URI parameter ``es.cluster.name`` determines the cluster name
 
 client - ``bulk`` selects the default Elasticsearch BulkProcessor API, ``ingest`` selects an xbib implementation
+ of bulk feeding with different error handling (advanced feature, not recommended for general use)
 
 
 License
@@ -195,7 +330,7 @@ License
 
 Elasticsearch OAI Plugin
 
-Copyright (C) 2014 Jörg Prante and xbib organization
+Copyright (C) 2014 Jörg Prante
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by

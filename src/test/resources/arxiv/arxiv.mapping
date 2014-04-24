@@ -1,0 +1,74 @@
+{
+      "arxiv" : {
+        "properties" : {
+          "arxiv:arXiv" : {
+            "properties" : {
+              "arxiv:abstract" : {
+                "type" : "string"
+              },
+              "arxiv:acm-class" : {
+                "type" : "string"
+              },
+              "arxiv:authors" : {
+                "properties" : {
+                  "arxiv:author" : {
+                    "properties" : {
+                      "arxiv:affiliation" : {
+                        "type" : "string"
+                      },
+                      "arxiv:forenames" : {
+                        "type" : "string"
+                      },
+                      "arxiv:keyname" : {
+                        "type" : "string"
+                      },
+                      "arxiv:suffix" : {
+                        "type" : "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "arxiv:categories" : {
+                "type" : "string"
+              },
+              "arxiv:comments" : {
+                "type" : "string"
+              },
+              "arxiv:created" : {
+                "type" : "date",
+                "format" : "dateOptionalTime"
+              },
+              "arxiv:doi" : {
+                "type" : "string"
+              },
+              "arxiv:id" : {
+                "type" : "string"
+              },
+              "arxiv:journal-ref" : {
+                "type" : "string"
+              },
+              "arxiv:license" : {
+                "type" : "string"
+              },
+              "arxiv:msc-class" : {
+                "type" : "string"
+              },
+              "arxiv:proxy" : {
+                "type" : "string"
+              },
+              "arxiv:report-no" : {
+                "type" : "string"
+              },
+              "arxiv:title" : {
+                "type" : "string"
+              },
+              "arxiv:updated" : {
+                "type" : "date",
+                "format" : "dateOptionalTime"
+              }
+            }
+          }
+        }
+      }
+}

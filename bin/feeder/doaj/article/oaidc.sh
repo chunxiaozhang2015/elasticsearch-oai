@@ -6,14 +6,12 @@ java="/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/bin/java"
 echo '
 {
     "input" : [
-        "http://doaj.org/oai?metadataPrefix=oai_dc&from=2000-01-01&until=2014-04-17"
+        "http://doaj.org/oai.article?verb=ListRecords&metadataPrefix=oai_dc&from=2000-01-01&until=2015-01-01"
     ],
     "handler" : "xml",
     "elasticsearch" : "es://localhost:9300?es.cluster.name=elasticsearch",
-    "index" : "doaj",
-    "type" : "doaj",
-    "shards" : 3,
-    "replica" : 0,
+    "index" : "doajarticle",
+    "type" : "oai_dc",
     "maxbulkactions" : 1000,
     "maxconcurrentbulkrequests" : 20,
     "client" : "bulk",

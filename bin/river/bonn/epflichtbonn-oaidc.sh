@@ -1,5 +1,7 @@
 #!/bin/sh
-curl -XPUT 'localhost:9200/_river/bonn-epflicht/_meta' -d '{
+
+curl -XPUT 'localhost:9200/_river/bonn-epflicht/_meta' -d '
+{
   "type" : "oai",
   "oai" : {
     "input" : [
@@ -9,12 +11,9 @@ curl -XPUT 'localhost:9200/_river/bonn-epflicht/_meta' -d '{
     "handler" : "xml",
     "index" : "bonn-epflicht",
     "type" : "oai_dc",
-    "shards" : 1,
-    "replica" : 0,
     "maxbulkactions" : 1000,
     "maxconcurrentbulkrequests" : 1,
     "trace" : false,
     "scrubxml" : false
   }
-
 }'

@@ -2,8 +2,13 @@
 package org.xbib.elasticsearch.plugin.feeder;
 
 import org.elasticsearch.client.Client;
+
 import org.xbib.common.settings.Settings;
-import org.xbib.elasticsearch.sink.ResourceSink;
+import org.xbib.common.unit.TimeValue;
+import org.xbib.elasticsearch.plugin.cron.CronExpression;
+import org.xbib.elasticsearch.plugin.cron.CronThreadPoolExecutor;
+import org.xbib.elasticsearch.plugin.river.RiverState;
+import org.xbib.elasticsearch.rdf.ResourceSink;
 import org.xbib.elasticsearch.support.client.Ingest;
 import org.xbib.elasticsearch.support.client.bulk.BulkTransportClient;
 import org.xbib.elasticsearch.support.client.ingest.IngestTransportClient;
@@ -22,32 +27,120 @@ import org.xbib.pipeline.simple.MetricSimplePipelineExecutor;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
+import static com.google.common.collect.Lists.newLinkedList;
 import static org.xbib.common.settings.ImmutableSettings.settingsBuilder;
 
+/**
+ * Base class for all feeders and feed pipelines.
+ *
+ * A feed pipeline is a sequence of URI in form of pipeline elements that can be consumed
+ * in serial or parallel manner.
+ *
+ * Variables - mostly read-only - that are common to all pipeline executions are declared
+ * as static variables.
+ *
+ * @param <T>
+ * @param <R>
+ * @param <P>
+ */
 public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,R>>
         extends AbstractPipeline<URIPipelineElement, PipelineException> implements Tool {
 
     private final static Logger logger = LoggerFactory.getLogger(Feeder.class.getSimpleName());
 
-    private final static URIPipelineElement uriPipelineElement = new URIPipelineElement();
+    /**
+     * The settings for the feeder
+     */
+    protected Settings settings;
 
-    protected static Settings settings;
+    /**
+     * The URI sources for the feed processing
+     */
+    protected Queue<URI> input;
 
-    protected static Queue<URI> input;
+    /**
+     * The ingester routine, shared by all pipelines.
+     */
+    protected Ingest ingest;
 
-    protected static Ingest client;
+    /**
+     * Where generated RDF should be sent to.
+     */
+    protected ResourceSink sink;
 
-    protected static ResourceSink sink;
+    /**
+     * This executor can start the feeder at scheduled times.
+     */
+    private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
 
-    protected static boolean done = false;
-
+    /**
+     * The executor for pipelines.
+     */
     private MetricSimplePipelineExecutor<T,R,P> executor;
 
-    public Feeder<T,R,P> settings(Settings newSettings) {
-        settings = newSettings;
+    /**
+     * The state of the feeder, relevant for persistency if the feeder is running in a river
+     */
+    private RiverState riverState;
+
+    /**
+     *  A counter for the state bookkeeping.
+     */
+    private final AtomicLong counter = new AtomicLong();
+
+    /**
+     * A flag that indicates the feeder should terminate.
+     */
+    private volatile boolean interrupted;
+
+    private List<Feeder> registry = newLinkedList();
+
+    public Feeder() {
+        registry.add(this);
+    }
+
+    public Feeder(Feeder feeder) {
+        this.settings = feeder.settings;
+        this.input = feeder.input;
+        this.ingest = feeder.ingest;
+        this.sink = feeder.sink;
+        this.scheduledThreadPoolExecutor = feeder.scheduledThreadPoolExecutor;
+        this.riverState = feeder.riverState;
+        feeder.registry.add(this);
+    }
+
+    @Override
+    public void schedule(Thread thread) {
+        String[] schedule = settings.getAsArray("schedule");
+        Long seconds = settings.getAsTime("interval", TimeValue.timeValueSeconds(0)).seconds();
+        if (schedule != null && schedule.length > 0) {
+            CronThreadPoolExecutor e = new CronThreadPoolExecutor(settings.getAsInt("cronpoolsize", 4));
+            for (String cron : schedule) {
+                e.schedule(thread, new CronExpression(cron));
+            }
+            this.scheduledThreadPoolExecutor = e;
+            logger.info("scheduled with cron expressions {}", Arrays.asList(schedule));
+        } else if (seconds > 0L) {
+            this.scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(settings.getAsInt("cronpoolsize", 4));
+            scheduledThreadPoolExecutor.scheduleAtFixedRate(thread, 0L, seconds, TimeUnit.SECONDS);
+            logger.info("scheduled at fixed rate of {} seconds", seconds);
+        } else {
+            thread.start();
+            logger.info("started");
+        }
+    }
+
+    public Feeder<T,R,P> setSettings(Settings newSettings) {
+        this.settings = newSettings;
         return this;
     }
 
@@ -55,37 +148,42 @@ public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,
         Integer maxbulkactions = settings.getAsInt("maxbulkactions", 1000);
         Integer maxconcurrentbulkrequests = settings.getAsInt("maxconcurrentbulkrequests",
                 Runtime.getRuntime().availableProcessors());
-        client = new NodeClient()
+        this.ingest = new NodeClient()
                 .maxActionsPerBulkRequest(maxbulkactions)
                 .maxConcurrentBulkRequests(maxconcurrentbulkrequests)
                 .newClient(c);
-        done = false;
+    }
+
+    public Feeder<T,R,P> setRiverState(RiverState riverState) {
+        this.riverState = riverState;
+        return this;
+    }
+
+    public RiverState getRiverState() {
+        return riverState;
     }
 
     @Override
     public Feeder<T,R,P> readFrom(Reader reader) {
-        settings = settingsBuilder().loadFromReader(reader).build();
+        this.settings = settingsBuilder().loadFromReader(reader).build();
         return this;
     }
 
     @Override
     public void run() {
-
         try {
-            logger.info("preparing run with settings {}", settings.getAsMap());
+            logger.info("starting run with settings {}", settings.getAsMap());
             prepare();
-            logger.info("executing");
-            executor = new MetricSimplePipelineExecutor<T, R, P>()
+            this.executor = new MetricSimplePipelineExecutor<T, R, P>()
                     .setConcurrency(settings.getAsInt("concurrency", 1))
                     .setPipelineProvider(pipelineProvider())
                     .prepare()
                     .execute()
                     .waitFor();
-            logger.info("execution completed");
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         } finally {
-            done = true;
+
             try {
                 if (executor != null) {
                     executor.shutdown();
@@ -97,7 +195,7 @@ public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,
             } catch (IOException e) {
                 logger.error(e.getMessage(), e);
             }
-            logger.info("run completed");
+            logger.info("run completed with settings {}", settings.getAsMap());
         }
     }
 
@@ -105,34 +203,32 @@ public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,
         Integer maxbulkactions = settings.getAsInt("maxbulkactions", 1000);
         Integer maxconcurrentbulkrequests = settings.getAsInt("maxconcurrentbulkrequests",
                 Runtime.getRuntime().availableProcessors());
-        if (client == null) {
-            client = "ingest".equals(settings.get("client")) ?
+        if (ingest == null) {
+            ingest = "ingest".equals(settings.get("client")) ?
                       new IngestTransportClient()
                     : new BulkTransportClient();
-            client.maxActionsPerBulkRequest(maxbulkactions)
+            ingest.maxActionsPerBulkRequest(maxbulkactions)
                     .maxConcurrentBulkRequests(maxconcurrentbulkrequests);
-            client.newClient(URI.create(settings.get("elasticsearch")));
+            ingest.newClient(URI.create(settings.get("elasticsearch")));
         }
         String index = settings.get("index");
         String type = settings.get("type");
         try {
-            client.setting(Feeder.class.getResourceAsStream(index + ".json"));
+            ingest.setting(Feeder.class.getResourceAsStream("/" + index + "/settings"));
         } catch (Exception e) {
             // ignore
         }
         try {
-            client.mapping(type, Feeder.class.getResourceAsStream(index + "/" + type + ".json"));
+            ingest.mapping(type, Feeder.class.getResourceAsStream("/" + index + "/" + type + ".mapping"));
         } catch (Exception e) {
             // ignore
         }
-        client.setIndex(index)
+        ingest.setIndex(index)
                 .setType(type)
-                .shards(settings.getAsInt("shards", 1))
-                .replica(settings.getAsInt("replica", 0))
                 .newIndex()
                 .startBulk();
-        sink = new ResourceSink(client);
-        input = new ConcurrentLinkedQueue<URI>();
+        this.sink = new ResourceSink(ingest);
+        this.input = new ConcurrentLinkedQueue<URI>();
         String[] inputs = settings.getAsArray("input");
         for (String uri : inputs) {
             input.offer(URI.create(uri));
@@ -142,30 +238,44 @@ public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,
     }
 
     protected Feeder<T,R,P> cleanup() throws IOException {
-        client.flush().stopBulk();
-        client.updateReplicaLevel(settings.getAsInt("replica", 0));
+        ingest.flush().stopBulk();
+        ingest.updateReplicaLevel(ingest.settings().getAsInt("index.number_of_replica", 0));
+        if (riverState != null) {
+            riverState.setActive(false).save(ingest.client());
+        }
         return this;
+    }
+
+    /**
+     * Interrupt this feeder. The feeder pipelines will terminate as soon as the next cycle is
+     * executed.
+     * @param state true if the feeder should be interrupted
+     */
+    public void setInterrupted(boolean state) {
+        interrupted = state;
+        registry.stream().filter(feeder -> this != feeder).forEach(feeder -> {
+            feeder.setInterrupted(state);
+        });
+    }
+
+    public boolean getInterrupted() {
+        return interrupted;
     }
 
     @Override
     public void close() throws IOException {
-        logger.info("closing");
+        setInterrupted(true);
+        logger.info("closing ...");
     }
 
     @Override
     public boolean hasNext() {
-        return !done && !input.isEmpty();
+        return !input.isEmpty();
     }
 
     @Override
     public URIPipelineElement next() {
-        URI uri = input.poll();
-        done = uri == null;
-        uriPipelineElement.set(uri);
-        if (done) {
-            return uriPipelineElement;
-        }
-        return uriPipelineElement;
+        return new URIPipelineElement().set(input.poll());
     }
 
     @Override
@@ -186,26 +296,56 @@ public abstract class Feeder<T, R extends PipelineRequest, P extends Pipeline<T,
     public Thread shutdownHook() {
         return new Thread() {
             public void run() {
-                done = true;
-                try {
-                    if (executor != null) {
-                        executor.shutdown();
-                        executor = null;
+                for (Feeder feeder : registry) {
+                    try {
+                        if (feeder.scheduledThreadPoolExecutor != null) {
+                            logger.info("shutting down scheduler");
+                            feeder.scheduledThreadPoolExecutor.shutdownNow();
+                            feeder.scheduledThreadPoolExecutor = null;
+                        }
+                        if (feeder.executor != null) {
+                            logger.info("shutting down executor");
+                            feeder.executor.shutdown();
+                            feeder.executor = null;
+                        }
+                    } catch (InterruptedException e) {
+                        logger.warn("interrupted", e);
+                    } catch (IOException e) {
+                        logger.error(e.getMessage(), e);
                     }
-                    if (client != null) {
-                        client.stopBulk();
-                        client.updateReplicaLevel(settings.getAsInt("replica", 0));
-                        client.shutdown();
-                        client = null;
-                    }
-                } catch (InterruptedException e) {
-                    logger.warn("interrupted", e);
-                } catch (IOException e) {
-                    logger.error(e.getMessage(), e);
                 }
-                logger.info("run completed");
+                if (ingest != null) {
+                    logger.info("shutting down ingester");
+                    try {
+                        ingest.stopBulk();
+                        ingest.updateReplicaLevel(settings.getAsInt("replica", 0));
+                        ingest.shutdown();
+                    } catch (IOException e) {
+                        logger.error(e.getMessage(), e);
+                    }
+                }
+                logger.info("shutdown completed");
             }
         };
+    }
+
+    protected void active(URI uri) throws IOException {
+        if (riverState != null && uri != null) {
+            riverState.setName(uri.toString())
+                    .setTimestamp(new Date())
+                    .setActive(true)
+                    .setCounter(counter.incrementAndGet())
+                    .save(ingest.client());
+        }
+    }
+
+    protected void inactive(URI uri) throws IOException {
+        if (riverState != null && uri != null) {
+            riverState.setName(uri.toString())
+                    .setTimestamp(new Date())
+                    .setActive(false)
+                    .save(ingest.client());
+        }
     }
 
     protected abstract PipelineProvider<P> pipelineProvider();

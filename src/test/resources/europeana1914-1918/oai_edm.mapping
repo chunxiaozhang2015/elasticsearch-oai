@@ -1,0 +1,107 @@
+{
+    "oai_edm" : {
+        "properties" : {
+          "dc:contributor" : {
+            "type" : "string"
+          },
+          "dc:creator" : {
+            "type" : "string"
+          },
+          "dc:date" : {
+            "type" : "string"
+          },
+          "dc:description" : {
+            "type" : "string"
+          },
+          "dc:format" : {
+            "type" : "string"
+          },
+          "dc:identifier" : {
+            "type" : "string"
+          },
+          "dc:language" : {
+            "type" : "string"
+          },
+          "dc:subject" : {
+            "type" : "string"
+          },
+          "dc:title" : {
+            "type" : "string"
+          },
+          "dc:type" : {
+            "type" : "string"
+          },
+          "dcterms:alternative" : {
+            "type" : "string"
+          },
+          "dcterms:created" : {
+            "type" : "string"
+          },
+          "dcterms:hasPart" : {
+            "type" : "string"
+          },
+          "dcterms:provenance" : {
+            "type" : "string"
+          },
+          "dcterms:spatial" : {
+            "type" : "string"
+          },
+          "dcterms:temporal" : {
+            "type" : "string"
+          },
+          "edm:aggregatedCHO" : {
+            "type" : "string"
+          },
+          "edm:begin" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          },
+          "edm:dataProvider" : {
+            "type" : "string"
+          },
+          "edm:end" : {
+            "type" : "date",
+            "format" : "dateOptionalTime"
+          },
+          "edm:hasMet" : {
+            "type" : "string"
+          },
+          "edm:isShownAt" : {
+            "type" : "string"
+          },
+          "edm:isShownBy" : {
+            "type" : "string"
+          },
+          "edm:provider" : {
+            "type" : "string"
+          },
+          "edm:rights" : {
+            "type" : "string"
+          },
+          "edm:type" : {
+            "type" : "string"
+          },
+          "edm:ugc" : {
+            "type" : "string"
+          },
+          "geo:lat" : {
+            "type" : "string"
+          },
+          "geo:long" : {
+            "type" : "string"
+          },
+          "rdf:type" : {
+            "type" : "string"
+          },
+          "skos:prefLabel" : {
+            "type" : "string"
+          },
+          "iri" : {
+            "type" : "string"
+          },
+          "location" : {
+             "type" : "geo_point"
+          }
+        }
+    }
+}
