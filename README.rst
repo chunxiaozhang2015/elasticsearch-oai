@@ -36,16 +36,16 @@ ES version     Plugin       Release date
 Installation
 ------------
 
-    ./bin/plugin --install oai --url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-river-oai/1.1.0.0/elasticsearch-river-oai-1.1.0.0.zip
+    ./bin/plugin --install oai --url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-river-oai/1.1.0.0/elasticsearch-river-oai-1.1.0.0-plugin.zip
 
 Do not forget to restart the node after installing.
 
 Checksum
 --------
 
-File: elasticsearch-river-oai-1.1.0.0.zip
+File: elasticsearch-river-oai-1.1.0.0-plugin.zip
 
-SHA1: 839f4bc635248b31e5522e21d569c5458b3e2126
+SHA1: bd60bce26e9dedfb8c2969482c0b54dc5d027a46
 
 Project docs
 ------------
@@ -57,10 +57,24 @@ Issues
 
 All feedback is welcome! If you find issues, please post them at `Github <https://github.com/jprante/elasticsearch-river-oai/issues>`_
 
+
+Scripts
+=======
+
+Note: all the scripts here are provided in the repository in the ``bin`` folder. For convenience, copy the
+``bin`` folder to ``plugins/oai/bin``. The plugin installer of Elasticsearch removes ``bin`` folder
+from zip plugin archives.
+
+
+Then change the current directory to ``plugins/oai`` to start the scripts::
+
+    bash bin/scriptname
+
+
 Example: ArXiv
 ==============
 
-The following standalone script starts a feeder for harvesting `ArXiv <http://arxiv.org>` and pushing the docs into Elasticsearch::
+The following standalone script starts a feeder for harvesting `ArXiv <http://arxiv.org>`_ and pushing the docs into Elasticsearch::
 
     #!/bin/sh
 
@@ -158,15 +172,15 @@ With the following script, you can start a feeder that collects all the material
 
 As you can see, the Europeana RDF data model `EDM <http://pro.europeana.eu/edm-documentation>`_ is harvested.
 
-The WGS84 Geo coordinates are transformed to GeoJSON ``location`` field so they can be used for Elasticsearch.
-A preconfigured mapping file maps ``location`` to Elasticsearch geo points.
+The WGS84 Geo coordinates are transformed to a GeoJSON ``location`` field so they can be used for Elasticsearch.
+A preconfigured mapping file ``europeana1914-1918/oai_edm.mapping`` maps ``location``field to an Elasticsearch geo point.
 
 All document fields with prefix ``europeana19141918:`` are expanded by a dereference mechanism with
 the information from the fields ``skos:prefLabel`` and ``location``.
 
-The result ``providedCHO`` documents can be use for Europeana 1914-1918 geo search.
+The result ``providedCHO`` documents can be used for Europeana 1914-1918 geo search.
 
-Example for a geo search around Cologne::
+Example for a geo search around Cologne, Germany::
 
     curl -XPOST '0:9200/europeana1914-1918/_search' -d '
     {
@@ -248,14 +262,15 @@ A full example would be::
 Starting a feeder instance
 --------------------------
 
-A feeder is a standalone plugin that can push data into a remote Elasticsearch
-cluster and runs outside an Elasticsearch node.
+A feeder is a standalone plugin that can push data into a remote Elasticsearch cluster and
+runs outside an Elasticsearch node. This push mode is comparable to Logstash, which is a
+data pipeline tool that can prepare event-based data for Elasticsearch.
 
-Setting up a standalone feeder is also simple. Download Elasticsearch and install it
-as you would for a node. Install the plugin as you would for a river. Instead of
+Setting up a standalone feeder is very simple. Download Elasticsearch and install it
+as you would for a node. Install the OAI plugin as you would for a river plugin. Now, instead of
 starting the node, change into the `plugins/oai` folder.
 
- Then you can execute feeder script for example for indexing DOAJ artices::
+Then you can execute feeder script for example for indexing DOAJ artices::
 
     bash bin/feeder/doaj/article/oaidc.sh
 
@@ -305,11 +320,7 @@ handler - ``xml`` for XML metadata content, ``rdf`` for RDF/XML
 
 index - the name of the Elasticsearch index
 
-type - the name of the Elasticsearch type
-
-shards - the number of shards of the index
-
-replica - the replica level for the index
+type - the name of the Elasticsearch index type
 
 maxbulkactions - the maximum number of actions in a bulk request
 
@@ -321,9 +332,15 @@ scrubxml - if ``true``, the harvested content will be scrubbed from invalid XML 
 
 elasticsearch - an URI to address an Elasticsearch node. URI parameter ``es.cluster.name`` determines the cluster name
 
-client - ``bulk`` selects the default Elasticsearch BulkProcessor API, ``ingest`` selects an xbib implementation
- of bulk feeding with different error handling (advanced feature, not recommended for general use)
+client - ``bulk`` selects the default Elasticsearch BulkProcessor API, ``ingest`` selects an xbib implementation of bulk feeding with different error handling (advanced feature, not recommended for general use)
 
+deref_index - index name for dereferencing
+
+deref_type - index type name for dereferencing
+
+deref_prefix - prefix for triggering dereferencing
+
+deref_field - fields used for dereferencing
 
 License
 =======
