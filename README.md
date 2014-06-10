@@ -39,18 +39,18 @@ Do not forget to restart the node after installing.
 ## Project docs
 
 The Maven project site is available at
-`Github <http://jprante.github.io/elasticsearch-river-oai>`_
+[Github](http://jprante.github.io/elasticsearch-river-oai)
 
 ## Issues
 
 All feedback is welcome! If you find issues, please post them at
-`Github <https://github.com/jprante/elasticsearch-river-oai/issues>`_
+[Github](https://github.com/jprante/elasticsearch-river-oai/issues)
 
 # Documentation
 
 ## Starting a river instance
 
-A `river <http://www.elasticsearch.org/guide/reference/river/>`_ runs within a running node
+A [river](http://www.elasticsearch.org/guide/reference/river/) runs within a running node
 of an Elasticsearch cluster and pulls data.
 
 Setting up a river is as simple as executing the following command::
@@ -271,7 +271,7 @@ With the following script, you can start a feeder that collects all the material
         org.xbib.elasticsearch.plugin.feeder.Runner \
         org.xbib.elasticsearch.plugin.feeder.oai.OAIFeeder
 
-As you can see, the Europeana RDF data model `EDM <http://pro.europeana.eu/edm-documentation>`_ is harvested.
+As you can see, the Europeana RDF data model [EDM](http://pro.europeana.eu/edm-documentation) is harvested.
 
 The WGS84 Geo coordinates are transformed to a GeoJSON ``location`` field so they can be used for Elasticsearch.
 A preconfigured mapping file ``europeana1914-1918/oai_edm.mapping`` maps ``location``field to an Elasticsearch geo point.
