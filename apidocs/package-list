@@ -1,7 +1,3 @@
-org.xbib.elasticsearch.plugin.cron
 org.xbib.elasticsearch.plugin.feeder
 org.xbib.elasticsearch.plugin.feeder.oai
-org.xbib.elasticsearch.plugin.river
 org.xbib.elasticsearch.plugin.river.oai
-org.xbib.elasticsearch.rest.action.river
-org.xbib.elasticsearch.rest.action.support
