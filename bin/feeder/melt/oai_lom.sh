@@ -6,17 +6,20 @@ java="/usr/bin/java"
 
 echo '
 {
-    "url" : "http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXiv&from=2000-01-01&until=2015-01-01",
-    "concurrency" : 1,
-    "handler" : "xml",
     "elasticsearch" : "es://localhost:9300?es.cluster.name=elasticsearch",
-    "index" : "arxiv",
-    "type" : "arxiv",
+    "client" : "ingest",
+    "index" : "melt",
+    "type" : "oai_lom",
     "maxbulkactions" : 1000,
-    "maxconcurrentbulkrequests" : 1,
-    "client" : "bulk",
-    "trace" : false,
-    "scrubxml" : false
+    "maxconcurrentbulkrequests" : 10,
+    "oai" : [
+        {
+            "url" : "http://www.melt.fwu.de/oai2.php?verb=ListRecords&metadataPrefix=oai_lom",
+            "handler" : "xml",
+            "scrubxml" : false,
+            "trace" : false
+        }
+    ]
 }
 ' | ${java} \
     -cp $(pwd):$(pwd)/\*:$(pwd)/../../lib/\* \

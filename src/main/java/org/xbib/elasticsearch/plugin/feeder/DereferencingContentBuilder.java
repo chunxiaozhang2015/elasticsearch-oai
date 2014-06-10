@@ -1,11 +1,9 @@
-
 package org.xbib.elasticsearch.plugin.feeder;
 
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.get.GetField;
-
 import org.xbib.common.xcontent.XContentBuilder;
 import org.xbib.rdf.Identifier;
 import org.xbib.rdf.Node;
@@ -18,7 +16,7 @@ import org.xbib.rdf.context.ResourceContext;
 import java.io.IOException;
 
 public class DereferencingContentBuilder<C extends ResourceContext<R>, R extends Resource>
-        extends DefaultContentBuilder<C,R> {
+        extends DefaultContentBuilder<C, R> {
 
     private final IRINamespaceContext namespaceContext;
 
@@ -43,7 +41,7 @@ public class DereferencingContentBuilder<C extends ResourceContext<R>, R extends
 
     @Override
     protected <S extends Identifier, P extends Property, O extends Node> void expandField(XContentBuilder builder, ResourceContext<R> context, S subject, P predicate, O object) throws IOException {
-        if (subject == null || predicate == null || object == null || prefix == null || index == null || type == null|| field == null) {
+        if (subject == null || predicate == null || object == null || prefix == null || index == null || type == null || field == null) {
             return;
         }
         String id = object.nativeValue().toString();
@@ -84,7 +82,7 @@ public class DereferencingContentBuilder<C extends ResourceContext<R>, R extends
 
     @Override
     protected <S extends Identifier, P extends Property, O extends Node> void expandValue(XContentBuilder builder, ResourceContext<R> context, S subject, P predicate, O object) throws IOException {
-        if (subject == null || predicate == null || object == null || prefix == null || index == null || type == null|| field == null) {
+        if (subject == null || predicate == null || object == null || prefix == null || index == null || type == null || field == null) {
             return;
         }
         final String id = object.nativeValue().toString();

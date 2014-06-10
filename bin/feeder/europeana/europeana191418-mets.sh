@@ -6,17 +6,18 @@ java="/usr/bin/java"
 
 echo '
 {
-    "url" : "http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXiv&from=2000-01-01&until=2015-01-01",
-    "concurrency" : 1,
-    "handler" : "xml",
     "elasticsearch" : "es://localhost:9300?es.cluster.name=elasticsearch",
-    "index" : "arxiv",
-    "type" : "arxiv",
+    "client" : "ingest",
+    "index" : "europeana1914-1918",
+    "type" : "mets",
     "maxbulkactions" : 1000,
-    "maxconcurrentbulkrequests" : 1,
-    "client" : "bulk",
-    "trace" : false,
-    "scrubxml" : false
+    "maxconcurrentbulkrequests" : 10,
+    "oai" : {
+        "url" : "http://digital.staatsbibliothek-berlin.de/oai/?verb=ListRecords&metadataPrefix=mets&set=DC_krieg.1914.1918",
+        "handler" : "xml",
+        "scrubxml" : false,
+        "trace" : false
+    }
 }
 ' | ${java} \
     -cp $(pwd):$(pwd)/\*:$(pwd)/../../lib/\* \

@@ -1,101 +1,108 @@
-
 package org.xbib.elasticsearch.plugin.river.oai;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.settings.loader.JsonSettingsLoader;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.river.AbstractRiverComponent;
 import org.elasticsearch.river.RiverIndexName;
 import org.elasticsearch.river.RiverName;
 import org.elasticsearch.river.RiverSettings;
-
-import org.xbib.common.settings.Settings;
-import org.xbib.elasticsearch.plugin.river.StatefulRiver;
-import org.xbib.elasticsearch.plugin.river.RiverState;
+import org.xbib.elasticsearch.action.river.execute.RunnableRiver;
+import org.xbib.elasticsearch.action.river.state.RiverState;
+import org.xbib.elasticsearch.action.river.state.StatefulRiver;
+import org.xbib.elasticsearch.plugin.feeder.Feeder;
 import org.xbib.elasticsearch.plugin.feeder.oai.OAIFeeder;
 
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 
-import static org.xbib.common.settings.ImmutableSettings.settingsBuilder;
+import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public class OAIRiver extends AbstractRiverComponent implements StatefulRiver {
+/**
+ * Open Archive Initiative river
+ * The river is a thin wrapper around the OAI feeder.
+ */
+public class OAIRiver extends AbstractRiverComponent implements RunnableRiver, StatefulRiver {
 
-    private volatile Thread harvesterThread;
+    private volatile Thread riverThread;
 
-    private final OAIFeeder feeder;
+    private final Feeder feeder;
 
     private final Client client;
 
-    private final RiverState riverState;
+    private volatile boolean closed;
 
     @Inject
     public OAIRiver(RiverName riverName, RiverSettings riverSettings,
                     @RiverIndexName String riverIndexName, Client client) {
         super(riverName, riverSettings);
-        this.client = client;
         if (!riverSettings.settings().containsKey("oai")) {
             throw new IllegalArgumentException("no 'oai' settings in river settings?");
         }
-        Map<String, Object> oaiSettings = (Map<String, Object>) settings.settings().get("oai");
+        this.client = client;
+        this.feeder = createFeeder(riverSettings);
+    }
 
-        Settings settings = settingsBuilder()
-                .putArray("input", XContentMapValues.extractRawValues("input", oaiSettings))
-                .put("concurrency", XContentMapValues.nodeIntegerValue(oaiSettings.get("concurrency"), 1))
-                .put("handler", XContentMapValues.nodeStringValue(oaiSettings.get("handler"), "xml"))
-                .put("index", XContentMapValues.nodeStringValue(oaiSettings.get("index"), "oai"))
-                .put("type", XContentMapValues.nodeStringValue(oaiSettings.get("type"), "oai"))
-                .put("shards", XContentMapValues.nodeIntegerValue(oaiSettings.get("shards"), 1))
-                .put("replica", XContentMapValues.nodeIntegerValue(oaiSettings.get("replica"), 0))
-                .put("maxbulkactions", XContentMapValues.nodeIntegerValue(oaiSettings.get("maxbulkactions"), 1000))
-                .put("maxconcurrentbulkrequests", XContentMapValues.nodeIntegerValue(oaiSettings.get("maxconcurrentbulkrequests"), 10))
-                .put("trace", XContentMapValues.nodeBooleanValue(oaiSettings.get("trace"), false))
-                .put("scrubxml", XContentMapValues.nodeBooleanValue(oaiSettings.get("scrubxml"), true))
-                .build();
-
-        feeder = new OAIFeeder();
-        feeder.setSettings(settings);
-
-        riverState = new RiverState(new Date())
-                .setType(riverName().getType())
-                .setName(riverName().getName())
-                .setCoordinates(riverIndexName, riverName.getName(), "_custom");
-
+    private Feeder createFeeder(RiverSettings riverSettings) {
+        Feeder feeder = null;
+        try {
+            Map<String, Object> spec = (Map<String, Object>) riverSettings.settings().get("oai");
+            Map<String, String> loadedSettings = new JsonSettingsLoader().load(jsonBuilder().map(spec).string());
+            Settings mySettings = settingsBuilder().put(loadedSettings).build();
+            feeder = new OAIFeeder();
+            feeder.setType("oai").setSpec(spec).setSettings(mySettings);
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return feeder;
     }
 
     @Override
     public void start() {
         feeder.setClient(client);
-        try {
-            riverState.load(client);
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
-        } finally {
-            feeder.setRiverState(riverState);
-        }
-        harvesterThread = EsExecutors.daemonThreadFactory(settings.globalSettings(),
-                "oai_river(" + riverName().name() + ")").newThread(feeder);
-        feeder.schedule(harvesterThread);
+        feeder.setRiverState(new RiverState()
+                        .setEnabled(true)
+                        .setStarted(new Date())
+                        .setName(riverName.getName())
+                        .setType(riverName.getType())
+                        .setCoordinates("_river", riverName.getName(), "_custom")
+        );
+        this.riverThread = EsExecutors.daemonThreadFactory(settings.globalSettings(),
+                "river(" + riverName().getType() + "/" + riverName().getName() + ")")
+                .newThread(feeder);
+        feeder.schedule(riverThread);
     }
 
     @Override
     public void close() {
-        logger.info("closing oai_river({})", riverName.name());
+        if (closed) {
+            return;
+        }
+        closed = true;
+        logger.info("closing river({}/{})", riverName.getType(), riverName.getName());
         try {
-            riverState.save(client);
-            feeder.close();
+            feeder.getRiverState().setEnabled(false).save(client);
+            feeder.shutdown();
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
-        if (harvesterThread != null) {
-            harvesterThread.interrupt();
+        if (riverThread != null) {
+            riverThread.interrupt();
         }
     }
 
+    @Override
     public RiverState getRiverState() {
-        return riverState;
+        return feeder.getRiverState();
+    }
+
+    @Override
+    public void run() {
+        feeder.run();
     }
 
 }

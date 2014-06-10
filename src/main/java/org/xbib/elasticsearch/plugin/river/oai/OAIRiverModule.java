@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.plugin.river.oai;
 
 import org.elasticsearch.common.inject.AbstractModule;

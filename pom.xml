@@ -6,7 +6,7 @@
 
     <groupId>org.xbib.elasticsearch.plugin</groupId>
     <artifactId>elasticsearch-river-oai</artifactId>
-    <version>1.1.0.0</version>
+    <version>1.2.1.0</version>
 
     <packaging>jar</packaging>
 
@@ -54,24 +54,15 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
-        <repository>
-            <id>bintray-elasticsearch-plugins</id>
-            <url>http://dl.bintray.com/jprante/elasticsearch-plugins</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
     </repositories>
 
     <properties>
         <github.global.server>github</github.global.server>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <elasticsearch.version>1.1.0</elasticsearch.version>
-        <org.xbib.version>1.0.0.Beta2</org.xbib.version>
-        <org.xbib.elasticsearch.support.version>1.1.0.3</org.xbib.elasticsearch.support.version>
+        <java.compile.version>1.7</java.compile.version>
+        <elasticsearch.version>1.2.1</elasticsearch.version>
+        <org.xbib.version>1.0.0.Beta3</org.xbib.version>
+        <org.xbib.elasticsearch.support.version>1.2.1.0</org.xbib.elasticsearch.support.version>
     </properties>
 
     <dependencies>
@@ -79,6 +70,14 @@
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
             <version>${elasticsearch.version}</version>
+            <type>jar</type>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.xbib.elasticsearch.plugin</groupId>
+            <artifactId>elasticsearch-support</artifactId>
+            <version>${org.xbib.elasticsearch.support.version}</version>
             <type>jar</type>
             <scope>compile</scope>
         </dependency>
@@ -94,14 +93,6 @@
         <dependency>
             <groupId>org.xbib</groupId>
             <artifactId>elasticsearch-rdf</artifactId>
-            <version>${org.xbib.version}</version>
-            <type>jar</type>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.xbib</groupId>
-            <artifactId>pipeline</artifactId>
             <version>${org.xbib.version}</version>
             <type>jar</type>
             <scope>compile</scope>
@@ -178,8 +169,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${java.compile.version}</source>
+                    <target>${java.compile.version}</target>
                     <optimize>true</optimize>
                     <showDeprecation>true</showDeprecation>
                     <showWarnings>true</showWarnings>
@@ -229,7 +220,6 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.4</version>
                 <configuration>
-                    <!-- <appendAssemblyId>false</appendAssemblyId> -->
                     <outputDirectory>${project.build.directory}/releases/</outputDirectory>
                     <descriptors>
                         <descriptor>${basedir}/src/main/assemblies/uberjar.xml</descriptor>
