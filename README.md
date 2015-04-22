@@ -5,9 +5,9 @@ Image Copyright (C) [OAI](http://www.openarchives.org/)
 # OAI Client for Elasticsearch [![Travis](https://travis-ci.org/jprante/elasticsearch-oai.png)](https://travis-ci.org/jprante/elasticsearch-oai)
 
 The [Open Archives Initiative - Protocol for Metadata Harvesting (OAI-PMH)](http://www.openarchives.org/pmh/)
-plugin allows to harvest metadata into Elasticsearch.
+client allows to harvest metadata into Elasticsearch.
 
-This application for Elasticsearch can run as feeder (standalone JVM).
+This application for Elasticsearch can run as a feeder in a standalone JVM, and connects to a remote cluster.
 
 It harvests DC / XML / RDF formats from OAI data providers (OAI servers).
 
