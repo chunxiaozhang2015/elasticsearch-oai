@@ -29,7 +29,7 @@ Elasticsearch schema-less indexing.
 
     mkdir -p lib bin
     cd lib
-    curl 'xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-oai/1.5.1.0/elasticsearch-oai-1.5.1.0-standalone.jar'
+    curl -O 'xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-oai/1.5.1.0/elasticsearch-oai-1.5.1.0-standalone.jar'
     cd ..
     <create a bash feed.sh script in bin folder>
     ./bin/feed.sh
