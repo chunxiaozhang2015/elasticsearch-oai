@@ -32,6 +32,7 @@ Elasticsearch schema-less indexing.
     curl -O 'xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-oai/1.5.1.0/elasticsearch-oai-1.5.1.0-standalone.jar'
     cd ..
     <create a bash feed.sh script in bin folder>
+    <add log4j2.xml to bin folder>
     ./bin/feed.sh
 
 ## Project docs
