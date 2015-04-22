@@ -1,3 +1,4 @@
-org.xbib.elasticsearch.plugin.feeder
-org.xbib.elasticsearch.plugin.feeder.oai
-org.xbib.elasticsearch.plugin.river.oai
+org.xbib.elasticsearch.oai
+org.xbib.elasticsearch.plugin.oai
+org.xbib.elasticsearch.plugin.rest.oai
+org.xbib.tools
