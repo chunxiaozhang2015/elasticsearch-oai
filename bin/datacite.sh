@@ -17,13 +17,10 @@ fi
 
 java="java"
 
-# arxiv.org is throttling to 20sec by HTTP Status 503 retry-after.
-# concurrency should be 1.
-
 echo '
 {
     "uri" : [
-        "http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXiv&from=2000-01-01&until=2016-01-01"
+        "http://oai.datacite.org/oai?verb=ListRecords&metadataPrefix=oai_dc&set=CDL.DPLANET"
     ],
     "concurrency" : 1,
     "elasticsearch" : {
@@ -31,8 +28,8 @@ echo '
         "host" : "localhost",
         "port" : 9300
     },
-    "index" : "arxiv",
-    "type" : "arxiv",
+    "index" : "datacite",
+    "type" : "datacite",
     "maxbulkactions" : 1000,
     "maxconcurrentbulkrequests" : 1,
     "mock" : false,

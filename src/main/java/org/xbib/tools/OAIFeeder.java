@@ -56,7 +56,7 @@ public class OAIFeeder extends TimewindowFeeder {
         String timeWindow = settings.get("timewindow") != null ?
                 DateTimeFormat.forPattern(settings.get("timewindow")).print(new DateTime()) : "";
         setConcreteIndex(resolveAlias(settings.get("index") + timeWindow));
-        Pattern pattern = Pattern.compile("^(.*)\\d+$");
+        Pattern pattern = Pattern.compile("^(.*?)\\d+$");
         Matcher m = pattern.matcher(getConcreteIndex());
         setIndex(m.matches() ? m.group() : getConcreteIndex());
         logger.info("base index name = {}, concrete index name = {}",

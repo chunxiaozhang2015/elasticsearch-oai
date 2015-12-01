@@ -12,17 +12,8 @@
             <unpack>true</unpack>
             <scope>runtime</scope>
             <includes>
-                <include>org.xbib.elasticsearch.plugin:elasticsearch-oai</include>
-                <include>org.xbib.elasticsearch.plugin:elasticsearch-support</include>
-                <include>org.xbib:rdf</include>
-                <include>org.xbib:oai</include>
-                <include>org.xbib:content</include>
-                <include>org.xbib:http</include>
-                <include>org.xbib:compress</include>
-                <include>org.xbib:util</include>
-                <include>org.xbib:xml</include>
-                <include>org.xbib:json</include>
-                <include>org.xbib:stream</include>
+                <include>org.xbib</include>
+                <include>org.xbib.elasticsearch.plugin</include>
                 <include>io.netty</include>
                 <include>xerces:xercesImpl</include>
                 <include>xalan:xalan</include>
