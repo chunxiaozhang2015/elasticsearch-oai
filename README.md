@@ -2,7 +2,7 @@
 
 Image Copyright (C) [OAI](http://www.openarchives.org/)
 
-# OAI Client for Elasticsearch [![Travis](https://travis-ci.org/jprante/elasticsearch-oai.png)](https://travis-ci.org/jprante/elasticsearch-oai)
+# OAI Harvester for Elasticsearch [![Travis](https://travis-ci.org/jprante/elasticsearch-oai.png)](https://travis-ci.org/jprante/elasticsearch-oai)
 
 The [Open Archives Initiative - Protocol for Metadata Harvesting (OAI-PMH)](http://www.openarchives.org/pmh/)
 client allows to harvest metadata into Elasticsearch.
@@ -20,6 +20,7 @@ Elasticsearch schema-less indexing.
 
 | Elasticsearch version    | Plugin     | Release date |
 | ------------------------ | -----------| -------------|
+| 2.1.0                    | 2.1.0.0    | Dec  2, 2015 |
 | 1.5.1                    | 1.5.1.0    | Apr 22, 2015 |
 | 1.2.1                    | 1.2.1.0    | Jun 10, 2014 |
 | 1.1.0                    | 1.1.0.0    | Apr 24, 2014 |
@@ -29,7 +30,7 @@ Elasticsearch schema-less indexing.
 
     mkdir -p lib bin
     cd lib
-    curl -O 'xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-oai/1.5.1.0/elasticsearch-oai-1.5.1.0-standalone.jar'
+    curl -O 'xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-oai/2.1.0.0/elasticsearch-oai-2.1.0.0-standalone.jar'
     cd ..
     <create a bash feed.sh script in bin folder>
     <add log4j2.xml to bin folder>
@@ -142,7 +143,7 @@ The logging can be controlled by the `log4j2.xml` file in the bin folder.
 
 ## License
 
-Elasticsearch OAI Client
+Elasticsearch OAI Harvester
 
 Copyright (C) 2014 Jörg Prante
 

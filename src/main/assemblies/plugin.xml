@@ -10,15 +10,16 @@
             <outputDirectory>/</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
             <unpack>false</unpack>
-            <scope>runtime</scope>
+            <scope>compile</scope>
             <includes>
-                <include>org.xbib.elasticsearch.plugin:elasticsearch-support</include>
+                <include>org.xbib.elasticsearch.plugin</include>
+                <include>org.xbib:xbib-oai</include>
+                <include>org.xbib:xbib-time</include>
+                <include>org.xbib:xbib-datastructures-forkjoin</include>
+                <include>xml-apis</include>
                 <include>xerces:xercesImpl</include>
                 <include>xalan:xalan</include>
                 <include>xalan:serializer</include>
-                <include>com.google.guava:guava</include>
-                <include>com.fasterxml.jackson.core</include>
-                <include>com.fasterxml.jackson.dataformat</include>
             </includes>
         </dependencySet>
     </dependencySets>
@@ -42,11 +43,17 @@
             <directory>${project.basedir}/src/test/resources</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
-                <include>log4j.properties</include>
+                <include>log4j2.xml</include>
                 <include>arxiv/*</include>
                 <include>europeana1914-1918/*</include>
             </includes>
         </fileSet>
     </fileSets>
-
+    <files>
+        <file>
+            <source>${basedir}/src/main/resources/plugin-descriptor.properties</source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>true</filtered>
+        </file>
+    </files>
 </assembly>

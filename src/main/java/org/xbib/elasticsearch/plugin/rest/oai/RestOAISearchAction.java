@@ -1,6 +1,6 @@
 package org.xbib.elasticsearch.plugin.rest.oai;
 
-import org.elasticsearch.ElasticsearchIllegalStateException;
+import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -51,13 +51,13 @@ public class RestOAISearchAction extends BaseRestHandler {
         try {
             switch (verb) {
                 case "ListRecords": {
-                    SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(client);
+                    SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(client, SearchAction.INSTANCE);
                     oaiServer.listRecords(makeListRecordsRequest(request), searchRequestBuilder);
                     client.search(searchRequestBuilder.request(), builder);
                     break;
                 }
                 default: {
-                    builder.onFailure(new ElasticsearchIllegalStateException("unknown verb: " + verb));
+                    builder.onFailure(new IllegalStateException("unknown verb: " + verb));
                     break;
                 }
             }

@@ -1,9 +1,9 @@
 package org.xbib.elasticsearch.plugin.oai;
 
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.plugins.AbstractPlugin;
+import org.elasticsearch.plugins.Plugin;
 
-public class OAIPlugin extends AbstractPlugin {
+public class OAIPlugin extends Plugin {
 
     @Inject
     public OAIPlugin() {
@@ -11,9 +11,7 @@ public class OAIPlugin extends AbstractPlugin {
 
     @Override
     public String name() {
-        return "oai-"
-                + Build.getInstance().getVersion() + "-"
-                + Build.getInstance().getShortHash();
+        return "oai";
     }
 
     @Override

@@ -88,11 +88,6 @@ public class StreamRestResponse extends RestResponse {
     }
 
     @Override
-    public boolean contentThreadSafe() {
-        return this.contentThreadSafe;
-    }
-
-    @Override
     public BytesReference content() {
         return this.content;
     }

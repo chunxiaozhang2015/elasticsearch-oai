@@ -6,7 +6,7 @@
 
     <groupId>org.xbib.elasticsearch.plugin</groupId>
     <artifactId>elasticsearch-oai</artifactId>
-    <version>1.5.1.0</version>
+    <version>2.1.0.0</version>
 
     <packaging>jar</packaging>
 
@@ -59,10 +59,10 @@
     <properties>
         <github.global.server>github</github.global.server>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.compile.version>1.7</java.compile.version>
-        <elasticsearch.version>1.5.1</elasticsearch.version>
+        <java.version>1.8</java.version>
+        <elasticsearch.version>2.1.0</elasticsearch.version>
         <org.xbib.version>1.0.0-SNAPSHOT</org.xbib.version>
-        <org.xbib.elasticsearch.support.version>1.5.0.0</org.xbib.elasticsearch.support.version>
+        <org.xbib.elasticsearch.helper.version>2.1.0.0</org.xbib.elasticsearch.helper.version>
     </properties>
 
     <dependencies>
@@ -76,15 +76,15 @@
 
         <dependency>
             <groupId>org.xbib.elasticsearch.plugin</groupId>
-            <artifactId>elasticsearch-support</artifactId>
-            <version>${org.xbib.elasticsearch.support.version}</version>
+            <artifactId>elasticsearch-helper</artifactId>
+            <version>${org.xbib.elasticsearch.helper.version}</version>
             <type>jar</type>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.xbib</groupId>
-            <artifactId>content</artifactId>
+            <artifactId>xbib-oai</artifactId>
             <version>${org.xbib.version}</version>
             <type>jar</type>
             <scope>compile</scope>
@@ -92,16 +92,64 @@
 
         <dependency>
             <groupId>org.xbib</groupId>
-            <artifactId>oai</artifactId>
+            <artifactId>xbib-time</artifactId>
             <version>${org.xbib.version}</version>
             <type>jar</type>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
-            <groupId>xml-apis</groupId>
-            <artifactId>xml-apis</artifactId>
-            <version>1.4.01</version>
+            <groupId>org.xbib</groupId>
+            <artifactId>xbib-datastructures-forkjoin</artifactId>
+            <version>${org.xbib.version}</version>
+            <type>jar</type>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <version>2.11.0</version>
+            <type>jar</type>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>xalan</groupId>
+            <artifactId>xalan</artifactId>
+            <version>2.7.2</version>
+            <type>jar</type>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>xalan</groupId>
+            <artifactId>serializer</artifactId>
+            <version>2.7.2</version>
+            <type>jar</type>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.codehaus.woodstox</groupId>
+            <artifactId>woodstox-core-asl</artifactId>
+            <version>4.4.1</version>
+            <type>jar</type>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>2.4.1</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.4.1</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -112,40 +160,9 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.1</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.1</version>
-            <optional>true</optional>
-        </dependency>
-
-
     </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>${basedir}/src/main/resources</directory>
-                <filtering>true</filtering>
-                <includes>
-                    <include>es-plugin.properties</include>
-                </includes>
-            </resource>
-            <resource>
-                <directory>${basedir}/src/main/resources</directory>
-                <filtering>false</filtering>
-                <excludes>
-                    <exclude>es-plugin.properties</exclude>
-                </excludes>
-            </resource>
-        </resources>
         <extensions>
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
@@ -153,13 +170,29 @@
                 <version>2.6</version>
             </extension>
         </extensions>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>plugin-descriptor.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>plugin-descriptor.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
-                    <source>${java.compile.version}</source>
-                    <target>${java.compile.version}</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <optimize>true</optimize>
                     <showDeprecation>true</showDeprecation>
                     <showWarnings>true</showWarnings>
@@ -182,7 +215,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.17</version>
+                <version>2.19</version>
                 <configuration>
                     <skip>false</skip>
                     <forkMode>once</forkMode>
@@ -252,12 +285,8 @@
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>2.7</version>
-            </plugin>
-            <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9.1</version>
+                <version>2.10.3</version>
                 <configuration>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <locale>en</locale>
@@ -285,7 +314,7 @@
             <plugin>
                 <groupId>com.github.github</groupId>
                 <artifactId>site-maven-plugin</artifactId>
-                <version>0.11</version>
+                <version>0.12</version>
                 <configuration>
                     <message>Building site for ${project.version}</message>
                 </configuration>
@@ -305,7 +334,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9.1</version>
+                <version>2.10.3</version>
                 <configuration>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <locale>en</locale>
@@ -315,34 +344,9 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.17</version>
+                <version>2.19</version>
             </plugin>
         </plugins>
     </reporting>
-
-    <profiles>
-        <profile>
-            <id>doclint-java8-disable</id>
-            <activation>
-                <os>
-                    <name>mac os x</name>
-                </os>
-                <jdk>[1.8,</jdk>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <configuration>
-                            <javadocExecutable>/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/bin/javadoc</javadocExecutable>
-                            <additionalparam>-Xdoclint:none</additionalparam>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-
-        </profile>
-    </profiles>
 
 </project>

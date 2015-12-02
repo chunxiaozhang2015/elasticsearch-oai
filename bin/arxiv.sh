@@ -39,10 +39,9 @@ echo '
     "timewindow" : "yyyyMMddHH",
     "aliases" : true,
     "ignoreindexcreationerror" : true
-
 }
 ' | ${java} \
-    -cp ${lib}/\*:${bin}/\* \
+    -cp ${lib}/\* \
     -Dlog4j.configurationFile=${bin}/log4j2.xml \
     org.xbib.tools.Runner \
     org.xbib.tools.OAIFeeder

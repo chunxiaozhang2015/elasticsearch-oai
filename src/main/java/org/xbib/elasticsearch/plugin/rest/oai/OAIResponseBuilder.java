@@ -2,8 +2,6 @@ package org.xbib.elasticsearch.plugin.rest.oai;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.joda.time.format.DateTimeFormatter;
-import org.elasticsearch.common.joda.time.format.ISODateTimeFormat;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestChannel;
@@ -11,6 +9,8 @@ import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.action.support.RestResponseListener;
 import org.elasticsearch.search.SearchHit;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 import org.xbib.oai.OAIConstants;
 import org.xbib.oai.server.ServerOAIRequest;
 import org.xbib.xml.XSI;
@@ -59,7 +59,7 @@ public class OAIResponseBuilder extends RestResponseListener<SearchResponse> imp
                 // TODO
             }
         }
-        return new BytesRestResponse(RestStatus.OK, "text/xml; charset=UTF-8", out.bytes(), true);
+        return new BytesRestResponse(RestStatus.OK, "text/xml; charset=UTF-8", out.bytes());
     }
 
     protected OAIResponseBuilder setOutputStream(OutputStream out) throws XMLStreamException {
